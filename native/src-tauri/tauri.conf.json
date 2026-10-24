@@ -1,0 +1,54 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Jot",
+  "version": "1.2.0",
+  "identifier": "dev.mhfrough.jot",
+  "build": {
+    "frontendDist": "../ui"
+  },
+  "app": {
+    "withGlobalTauri": true,
+    "windows": [
+      {
+        "label": "main",
+        "title": "Jot",
+        "width": 1180,
+        "height": 780,
+        "minWidth": 360,
+        "minHeight": 480,
+        "center": true
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src ipc: http://ipc.localhost"
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["nsis", "deb", "rpm", "appimage"],
+    "category": "Productivity",
+    "shortDescription": "Plain notes that stay on your device",
+    "longDescription": "Jot is a quiet notes app: no sign-in, no server, no tracking. Notes stay on your device, show when they were created and last updated, and can be locked behind a password.",
+    "copyright": "Copyright 2026 Mohammad Hamza. MIT licence.",
+    "homepage": "https://mhfrough.github.io/jot/",
+    "publisher": "Mohammad Hamza",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.png",
+      "icons/icon.ico"
+    ],
+    "windows": {
+      "webviewInstallMode": { "type": "downloadBootstrapper", "silent": true },
+      "nsis": {
+        "installMode": "currentUser",
+        "displayLanguageSelector": false,
+        "installerIcon": "icons/icon.ico"
+      }
+    },
+    "linux": {
+      "deb": { "section": "text" }
+    }
+  }
+}

@@ -111,11 +111,7 @@
           </dl>
           <label class="sr-only" for="edTitle">Title</label>
           <textarea class="ed-title" id="edTitle" rows="1" placeholder="Title" autocomplete="off" maxlength="300" spellcheck="true"></textarea>
-          <label class="sr-only" for="edBody">Note</label>
-          <div class="ed-wrap">
-            <div class="ed-mirror" id="edMirror" aria-hidden="true"></div>
-            <textarea class="ed-body" id="edBody" placeholder="Start writing…" autocomplete="off" spellcheck="true"></textarea>
-          </div>
+          <div class="ed-body" id="edBody" contenteditable="true" role="textbox" aria-multiline="true" aria-label="Note" data-placeholder="Start writing…" spellcheck="true"></div>
         </div>
 
         <footer class="ed-foot">

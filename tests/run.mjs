@@ -39,6 +39,20 @@ async function write(page, title, text) {
   await page.locator('#edBody').blur()
   await page.waitForFunction(() => document.querySelector('#edSaved').textContent === 'Saved')
 }
+// The note body as stored: plain text with marks
+const body = page => page.$eval('#edBody', el => el.value)
+// Puts the caret (or a selection) at characters start..end of one line of the note
+const caretAt = (page, line, start, end = start) => page.evaluate(([line, start, end]) => {
+  const el = document.querySelector('#edBody'); el.focus()
+  const ln = el.children[line], walk = document.createTreeWalker(ln, NodeFilter.SHOW_TEXT), r = document.createRange()
+  let pos = 0, n, s = false
+  while ((n = walk.nextNode())) {
+    if (!s && start <= pos + n.data.length) { r.setStart(n, start - pos); s = true }
+    if (s && end <= pos + n.data.length) { r.setEnd(n, end - pos); break }
+    pos += n.data.length
+  }
+  getSelection().removeAllRanges(); getSelection().addRange(r)
+}, [line, start, end])
 const titles = page => page.$$eval('#list .it-title', els => els.map(e => e.textContent.trim()))
 const tab = async (page, name) => { await page.click(`#tab-${name}`); await sleep(60) }
 const open = (page, title) => page.click(`#list .item:has(.it-title:text-is("${title}"))`)
@@ -167,42 +181,48 @@ await test('Checklists: tap a box to tick it, lists carry on', async () => {
   const { ctx, page } = await fresh()
   await write(page, 'List', '[ ] milk')
   await open(page, 'List')
-  await page.evaluate(() => { const b = document.querySelector('#edBody'); b.focus(); b.setSelectionRange(1, 1); b.click() })
+  await page.click('#edBody > div:first-child', { position: { x: 6, y: 10 } })
   await sleep(100)
-  check((await page.inputValue('#edBody')).startsWith('[x] milk'), `tick failed: ${await page.inputValue('#edBody')}`)
-  await page.evaluate(() => { const b = document.querySelector('#edBody'); b.setSelectionRange(b.value.length, b.value.length) })
+  check((await body(page)).startsWith('[x] milk'), `tick failed: ${await body(page)}`)
+  check(await page.$eval('#edBody > div:first-child', d => d.classList.contains('done')), 'ticked line not marked done')
+  await caretAt(page, 0, 8)
   await page.keyboard.press('Enter'); await page.keyboard.type('eggs')
-  check((await page.inputValue('#edBody')) === '[x] milk\n[ ] eggs', `list carry-on: ${JSON.stringify(await page.inputValue('#edBody'))}`)
+  check((await body(page)) === '[x] milk\n[ ] eggs', `list carry-on: ${JSON.stringify(await body(page))}`)
   await page.keyboard.press('Enter'); await page.keyboard.press('Enter')
-  check((await page.inputValue('#edBody')) === '[x] milk\n[ ] eggs\n', `empty item did not end the list: ${JSON.stringify(await page.inputValue('#edBody'))}`)
+  check((await body(page)) === '[x] milk\n[ ] eggs\n', `empty item did not end the list: ${JSON.stringify(await body(page))}`)
   await ctx.close()
 })
 
-await test('Formatting: bold, italic, strike and code, drawn in line with the text', async () => {
+await test('Formatting: bold, italic, strike and code show formatted and are stored as plain marks', async () => {
   const { ctx, page } = await fresh()
   await write(page, 'Styled', 'plain words here')
   await open(page, 'Styled')
-  await page.evaluate(() => { const b = document.querySelector('#edBody'); b.focus(); b.setSelectionRange(6, 11) })
+  await caretAt(page, 0, 6, 11)
   await page.keyboard.press('Control+b')
-  check((await page.inputValue('#edBody')) === 'plain **words** here', `bold: ${await page.inputValue('#edBody')}`)
+  check((await body(page)) === 'plain **words** here', `bold: ${await body(page)}`)
+  check(await page.$eval('#edBody', el => el.querySelector('b')?.textContent === 'words' && !el.textContent.includes('*')), 'bold not shown as bold, or the marks show')
   await page.keyboard.press('Control+b')
-  check((await page.inputValue('#edBody')) === 'plain words here', `bold off: ${await page.inputValue('#edBody')}`)
-  await page.evaluate(() => { const b = document.querySelector('#edBody'); b.setSelectionRange(0, 5) })
-  await page.click('[data-fmt="i"]')
-  await page.evaluate(() => { const b = document.querySelector('#edBody'); b.setSelectionRange(b.value.length - 4, b.value.length) })
-  await page.click('[data-fmt="s"]')
-  await page.keyboard.press('End'); await page.keyboard.type(' and ')
-  await page.click('[data-fmt="code"]'); await page.keyboard.type('x = 1')
-  const v = await page.inputValue('#edBody')
-  check(v === '_plain_ words ~~here~~ and `x = 1`', `marks: ${v}`)
-  check(await page.$eval('#edMirror', m => !!m.querySelector('i') && !!m.querySelector('s') && !!m.querySelector('code')), 'marks not drawn')
-  // the styled copy wraps exactly like the text: same height
-  await page.fill('#edBody', '**bold** '.repeat(60) + '\n_slanted_ '.repeat(20))
-  const [a, b] = await page.evaluate(() => [document.querySelector('#edBody').scrollHeight, document.querySelector('#edMirror').scrollHeight])
-  check(Math.abs(a - b) <= 2, `mirror ${b}px, text ${a}px: they would drift apart`)
+  check((await body(page)) === 'plain words here', `bold off: ${await body(page)}`)
+  await caretAt(page, 0, 0, 5); await page.click('[data-fmt="i"]')
+  await caretAt(page, 0, 12, 16); await page.click('[data-fmt="s"]')
+  await caretAt(page, 0, 6, 11); await page.click('[data-fmt="code"]')
+  const v = await body(page)
+  check(v === '_plain_ `words` ~~here~~', `marks: ${v}`)
+  const shown = await page.$eval('#edBody', el => el.innerHTML)
+  check(/<i>plain<\/i>/.test(shown) && /<(s|strike)>here<\/(s|strike)>/.test(shown) && /<code>words<\/code>/.test(shown) && !/[_~`]/.test(await page.textContent('#edBody')), `not shown formatted: ${shown}`)
+  // a stored note opens formatted, and comes back out unchanged
   await page.locator('#edBody').blur()
   await page.waitForFunction(() => document.querySelector('#edSaved').textContent === 'Saved')
-  check(!(await page.textContent('#list .item:has(.it-title:text-is("Styled")) .it-text')).includes('**'), 'marks shown in the list preview')
+  await page.reload(); await page.waitForSelector('body.ready'); await open(page, 'Styled')
+  check((await body(page)) === v, `round trip changed the text: ${await body(page)}`)
+  // pasted text comes in plain
+  await caretAt(page, 0, v.length - 6)
+  await page.evaluate(() => {
+    const dt = new DataTransfer(); dt.setData('text/html', '<span style="color:red;font-size:40px">loud</span>'); dt.setData('text/plain', 'quiet ')
+    document.querySelector('#edBody').dispatchEvent(new ClipboardEvent('paste', { clipboardData: dt, bubbles: true, cancelable: true }))
+  })
+  check(!(await page.$eval('#edBody', el => el.innerHTML)).includes('color'), 'pasted styles got in')
+  check(!(await page.textContent('#list .item:has(.it-title:text-is("Styled")) .it-text')).match(/[*_~`]/), 'marks shown in the list preview')
   await ctx.close()
 })
 
@@ -246,6 +266,23 @@ await test('Locked: password, encrypted at rest, lock and reopen, wrong password
   await ctx.close()
 })
 
+await test('Switching tabs switches the open note; locking closes an open locked note', async () => {
+  const { ctx, page } = await fresh()
+  await write(page, 'Plain one', 'hello')
+  await setLocked(page)
+  await write(page, 'Secret one', 'QUARTZ')
+  check((await page.inputValue('#edTitle')) === 'Secret one', 'locked note not open')
+  await tab(page, 'notes'); await sleep(100)
+  check((await page.inputValue('#edTitle')) === 'Plain one', `Notes tab still shows: ${await page.inputValue('#edTitle')}`)
+  await tab(page, 'archive'); await sleep(100)
+  check(!(await page.isVisible('#editor')), 'an empty tab still shows a note')
+  await tab(page, 'locked'); await sleep(100)
+  check((await page.inputValue('#edTitle')) === 'Secret one', 'Locked tab did not open its note')
+  await page.click('#listAction'); await sleep(200)
+  check(!(await page.content()).includes('QUARTZ') && (await page.inputValue('#edTitle')) !== 'Secret one', 'locked note still on screen after locking')
+  await ctx.close()
+})
+
 await test('Locked: closes after the idle time and soon after going to the background', async () => {
   const { ctx, page } = await fresh()
   await page.clock.install()
@@ -277,7 +314,8 @@ await test('Locked: exports stay encrypted and open on a new device; change and 
   await a.page.click('#lockPassBtn')
   const inputs = a.page.locator('#askFields input')
   await inputs.nth(0).fill(LOCKPASS); await inputs.nth(1).fill('new door brass'); await inputs.nth(2).fill('new door brass')
-  await a.page.click('#askOk'); await sleep(1500)
+  await a.page.click('#askOk')
+  await a.page.waitForFunction(() => !document.querySelector('#ask').open, null, { timeout: 15000 })
   await a.page.keyboard.press('Escape')
   await a.page.click('#tab-locked'); await a.page.click('#listAction'); await sleep(100)
   await a.page.fill('#lgPass', LOCKPASS); await a.page.click('#lgSubmit')
@@ -327,7 +365,7 @@ await test('Export, import into a new device, Simple Notes and text files', asyn
   const t = await titles(b.page)
   check(['Passport', 'Recipes', 'General note', 'Groceries', 'Wifi at home'].every(x => t.includes(x)), `titles: ${t}`)
   await open(b.page, 'Groceries')
-  check((await b.page.inputValue('#edBody')) === '[ ] eggs\n[x] bread', 'checklist not converted')
+  check((await body(b.page)) === '[ ] eggs\n[x] bread', `checklist not converted: ${JSON.stringify(await body(b.page))}`)
   check((await b.page.textContent('#edCreated')).includes('2023'), 'checklist date not taken from its first task')
   await b.ctx.close()
 })

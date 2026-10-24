@@ -1,0 +1,18 @@
+{
+  "name": "jot-native",
+  "private": true,
+  "version": "1.2.0",
+  "description": "Jot for Windows, Linux and Android (Tauri 2), wrapping the same web app",
+  "license": "MIT",
+  "scripts": {
+    "sync": "node ../tools/sync-native.mjs",
+    "icons": "tauri icon src-tauri/icons/source.png",
+    "dev": "npm run sync && tauri dev",
+    "build": "npm run sync && tauri build",
+    "android:init": "tauri android init",
+    "android:build": "npm run sync && tauri android build --apk"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "2.12.3"
+  }
+}

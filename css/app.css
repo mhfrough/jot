@@ -236,28 +236,23 @@ body.reading .desk { display: grid; animation: slide 0.28s var(--ease); }
 .meta dt { color: var(--ink-3); font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; font-size: 10.5px; }
 .meta dd { color: var(--ink-2); font-variant-numeric: tabular-nums; }
 
-.ed-title, .ed-body { display: block; width: 100%; border: 0; padding: 0; background: transparent; outline: none; resize: none; }
+.ed-title { display: block; width: 100%; border: 0; padding: 0; background: transparent; outline: none; resize: none; }
 .ed-title {
   overflow: hidden; margin-bottom: 14px;
   font: 750 calc(var(--note-size) * 1.5) / 1.25 var(--note); letter-spacing: -0.025em;
 }
-/* The note and its styled copy share every metric, so the copy sits exactly under the text */
-.ed-wrap { position: relative; }
-.ed-body, .ed-mirror {
-  margin: 0; padding: 0; border: 0;
-  font: 400 var(--note-size) / 1.75 var(--note); tab-size: 4; letter-spacing: 0;
-  white-space: pre-wrap; overflow-wrap: break-word; word-break: normal;
+/* The note body: formatted text, one line per <div> */
+.ed-body {
+  min-height: 60vh; outline: none; white-space: pre-wrap; overflow-wrap: break-word;
+  font: 400 var(--note-size) / 1.75 var(--note); tab-size: 4; caret-color: var(--ink);
 }
-.ed-body { position: relative; min-height: 60vh; overflow: hidden; color: transparent; caret-color: var(--ink); }
-.ed-body::selection { color: transparent; }
-.ed-mirror { position: absolute; inset: 0; pointer-events: none; color: var(--ink); }
-.ed-mirror b { font-weight: 750; }
-.ed-mirror i { font-style: italic; }
-.ed-mirror s { text-decoration: line-through; text-decoration-thickness: 1.5px; }
-.ed-mirror code { background: var(--select); color: var(--ink); font: inherit; }
-.ed-mirror .mk { color: var(--ink-3); font-weight: 400; font-style: normal; }
-.ed-mirror .done { color: var(--ink-3); text-decoration: line-through; text-decoration-color: var(--rule-2); }
-.editor.ro .ed-mirror { color: var(--ink-2); }
+.ed-body.blank::before { content: attr(data-placeholder); position: absolute; color: var(--ink-3); pointer-events: none; }
+.ed-body b, .ed-body strong { font-weight: 750; }
+.ed-body i, .ed-body em { font-style: italic; }
+.ed-body s, .ed-body strike, .ed-body del { text-decoration: line-through; text-decoration-thickness: 1.5px; }
+.ed-body code { padding: 0 0.15em; background: var(--select); font: inherit; }
+.ed-body > .done { color: var(--ink-3); text-decoration: line-through; text-decoration-color: var(--rule-2); }
+.editor.ro .ed-body { color: var(--ink-2); }
 
 /* Format buttons: the letters themselves, styled as what they do */
 .fmt { display: flex; gap: 2px; margin-left: 8px; padding-left: 8px; border-left: 1px solid var(--rule); }
@@ -267,8 +262,8 @@ body.reading .desk { display: grid; animation: slide 0.28s var(--ease); }
 .fmt .f-c { font-size: 11.5px; letter-spacing: -0.05em; }
 .editor.ro .fmt { display: none; }
 @media (max-width: 899px) { .ed-state { display: none; } .fmt { margin-left: 0; border-left: 0; } }
-.ed-title::placeholder, .ed-body::placeholder { color: var(--ink-3); opacity: 1; }
-.ed-body[readonly], .ed-title[readonly] { color: var(--ink-2); cursor: default; }
+.ed-title::placeholder { color: var(--ink-3); opacity: 1; }
+.ed-title[readonly] { color: var(--ink-2); cursor: default; }
 
 .ed-foot {
   display: flex; justify-content: space-between; gap: 12px; min-height: 36px; align-items: center;

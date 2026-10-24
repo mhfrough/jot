@@ -1,0 +1,34 @@
+[package]
+name = "jot"
+version = "1.2.0"
+description = "Jot: plain notes that stay on your device."
+authors = ["Mohammad Hamza"]
+license = "MIT"
+repository = "https://github.com/mhfrough/jot"
+edition = "2021"
+rust-version = "1.80"
+
+[lib]
+name = "jot_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+tauri-plugin-dialog = "2"
+tauri-plugin-fs = "2"
+tauri-plugin-opener = "2"
+
+# One window on the desktop: opening Jot again brings the open one forward
+[target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
+tauri-plugin-single-instance = "2"
+
+# Small, fast release builds
+[profile.release]
+codegen-units = 1
+lto = true
+opt-level = "s"
+panic = "abort"
+strip = true

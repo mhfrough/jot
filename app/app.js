@@ -5,9 +5,13 @@
 import * as DB from './db.js'
 import * as V from './vault.js'
 
-const VERSION = '1.1.0'
+const VERSION = '1.2.0'
 const TRASH_DAYS = 30
 const HIDDEN_LOCK_MS = 30000   // Locked closes this long after Jot goes to the background
+
+// Inside the Tauri app (Windows, Linux, Android) rather than a browser
+const NATIVE = '__TAURI_INTERNALS__' in window
+const T = window.__TAURI__
 
 const $ = (s, r = document) => r.querySelector(s)
 const $$ = (s, r = document) => [...r.querySelectorAll(s)]
@@ -73,7 +77,8 @@ function when(ms) {
 
 async function boot() {
   applyLook()
-  if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').then(watchUpdate).catch(() => {})
+  // The native app ships its files inside itself, so it needs no service worker
+  if (!NATIVE && 'serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').then(watchUpdate).catch(() => {})
   navigator.storage?.persist?.().catch(() => {})
   let recs = []
   try { recs = await DB.all() } catch { toast('This browser blocked storage, so notes cannot be saved here.') }
@@ -151,6 +156,7 @@ function setTab(tab, focus = true) {
   $('#listPane').setAttribute('aria-labelledby', `tab-${tab}`)
   body.dataset.tab = tab
   render()
+  followTab()
 }
 $('#tabs').addEventListener('click', e => { const t = e.target.closest('[role="tab"]'); if (t) setTab(t.dataset.tab, false) })
 $('#tabs').addEventListener('keydown', e => {
@@ -286,6 +292,7 @@ $('#list').addEventListener('keydown', e => {
 
 let editTimer = 0, editDirty = false, fresh = null
 const edTitle = $('#edTitle'), edBody = $('#edBody')
+const wide = () => matchMedia('(min-width: 900px)').matches
 
 function openNote(id, { focus = null, push = true } = {}) {
   const n = S.notes.get(id)
@@ -297,7 +304,6 @@ function openNote(id, { focus = null, push = true } = {}) {
   edBody.value = n.body || ''
   edTitle.readOnly = edBody.readOnly = ro
   $('#editor').classList.toggle('ro', ro)
-  paint()
   $('#editor').hidden = false
   $('#deskEmpty').hidden = true
   body.classList.add('reading')
@@ -307,11 +313,21 @@ function openNote(id, { focus = null, push = true } = {}) {
   grow()
   $('#edSaved').textContent = ''
   $('#sheet').scrollTop = 0
-  if (push && !history.state?.note && !matchMedia('(min-width: 900px)').matches) history.pushState({ note: true }, '')
+  if (push && !history.state?.note && !wide()) history.pushState({ note: true }, '')
   render()
   // A new note, or a mouse, gets the caret; on a phone, opening a note should not pop the keyboard
   const want = focus ?? matchMedia('(pointer: fine)').matches
   if (want && !ro) (n.title || n.body ? edBody : fresh === id ? edTitle : edBody).focus({ preventScroll: true })
+}
+
+// The note on the right follows the tab: when the open one is not in it, the tab's first note opens
+function followTab() {
+  const n = current()
+  if (n && inTab(n, S.tab)) return
+  if (!wide()) { if (n) closeEditor(true); return }
+  const first = visible()[0]
+  if (first) openNote(first.id, { focus: false, push: false })
+  else closeEditor(true)
 }
 
 function syncTools(n) {
@@ -339,64 +355,174 @@ function dates(n) {
   $('#edUpdated').title = fmtLong.format(n.updated)
 }
 function counts() {
-  const t = `${edTitle.value}\n${edBody.value}`.trim()
+  const t = `${edTitle.value}\n${plainText(edBody.value)}`.trim()
   const words = t ? t.split(/\s+/).length : 0
   $('#edCount').textContent = `${words.toLocaleString()} ${words === 1 ? 'word' : 'words'} · ${t.length.toLocaleString()} chars`
 }
 function grow() {
-  for (const el of [edTitle, edBody]) {
-    el.style.height = 'auto'
-    el.style.height = `${el.scrollHeight}px`
-  }
+  edTitle.style.height = 'auto'
+  edTitle.style.height = `${edTitle.scrollHeight}px`
 }
 
-/* ---------- formatting: **bold**, _italic_, ~~strike~~, `code` ----------
-   The note stays plain text. A copy of it is drawn under the textarea with the marks styled and
-   the markers faint; the textarea's own text is transparent, so you type into the styled copy.
-   JetBrains Mono keeps every weight and slant the same width, so the two always line up. */
+/* ---------- the note body: formatted text that is stored as plain text ----------
+   A note is kept as plain text with four marks: **bold**, _italic_, ~~strike~~ and `code`.
+   The editor shows it formatted, one <div> per line, and turns what you type back into the
+   same plain text, so exports, search and imports never see HTML. */
 
-const mirror = $('#edMirror')
 const esc = t => t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-const mk = m => `<span class="mk">${m}</span>`
-function inline(t) {
+const ZW = '​'
+
+function lineHtml(t) {
   const codes = []
-  t = t.replace(/`([^`\n]+)`/g, (_, c) => { codes.push(`${mk('`')}<code>${c}</code>${mk('`')}`); return `\u0000${codes.length - 1}\u0000` })
-  t = t.replace(/\*\*(\S(?:.*?\S)?)\*\*/g, (_, x) => `${mk('**')}<b>${x}</b>${mk('**')}`)
-  t = t.replace(/~~(\S(?:.*?\S)?)~~/g, (_, x) => `${mk('~~')}<s>${x}</s>${mk('~~')}`)
-  t = t.replace(/(^|[^\w_])_(\S(?:.*?\S)?)_(?![\w_])/g, (_, a, x) => `${a}${mk('_')}<i>${x}</i>${mk('_')}`)
+  t = esc(t).replace(/`([^`\n]+)`/g, (_, c) => { codes.push(`<code>${c}</code>`); return `\u0000${codes.length - 1}\u0000` })
+  t = t.replace(/\*\*(\S(?:.*?\S)?)\*\*/g, '<b>$1</b>')
+  t = t.replace(/~~(\S(?:.*?\S)?)~~/g, '<s>$1</s>')
+  t = t.replace(/(^|[^\w_])_(\S(?:.*?\S)?)_(?![\w_])/g, '$1<i>$2</i>')
   return t.replace(/\u0000(\d+)\u0000/g, (_, i) => codes[i])
 }
-function paint() {
-  mirror.innerHTML = esc(edBody.value).split('\n').map(line => {
-    const done = line.match(/^(\s*(?:- )?)(\[x\])(.*)$/i)
-    return done ? `${done[1]}${mk(done[2])}<span class="done">${inline(done[3])}</span>` : inline(line)
-  }).join('\n') + '\u200b'
+const toHtml = text => text.split('\n').map(l => `<div>${l ? lineHtml(l) : '<br>'}</div>`).join('')
+
+// A mark goes round the words only; spaces at either end stay outside it, as the format needs
+function wrapMark(m, inner) {
+  return inner.split('\n').map(seg => {
+    const core = seg.trim()
+    if (!core) return seg
+    return `${seg.match(/^\s*/)[0]}${m}${core}${m}${seg.match(/\s*$/)[0]}`
+  }).join('\n')
+}
+const MARK = { B: '**', STRONG: '**', I: '_', EM: '_', S: '~~', STRIKE: '~~', DEL: '~~' }
+function inlineText(node) {
+  if (node.nodeType === 3) return node.data.replaceAll(ZW, '')
+  if (node.nodeType !== 1) return ''
+  if (node.tagName === 'BR') return '\n'
+  if (node.tagName === 'CODE') { const c = node.textContent.replaceAll(ZW, ''); return c ? `\`${c}\`` : '' }
+  const inner = [...node.childNodes].map(inlineText).join('')
+  if (MARK[node.tagName]) return wrapMark(MARK[node.tagName], inner)
+  const st = node.style
+  if (st?.fontWeight === 'bold' || Number(st?.fontWeight) >= 600) return wrapMark('**', inner)
+  if (st?.fontStyle === 'italic') return wrapMark('_', inner)
+  if (/line-through/.test(st?.textDecorationLine || st?.textDecoration || '')) return wrapMark('~~', inner)
+  return inner
+}
+const isBlock = n => n.nodeType === 1 && /^(DIV|P|LI|H[1-6]|BLOCKQUOTE|PRE)$/.test(n.tagName)
+// Lines from a block: inline runs join into one line, nested blocks are lines of their own,
+// and the <br> a browser leaves at the end of a line is not a second line
+function blockLines(el) {
+  const out = []
+  let cur = null
+  const flush = () => { if (cur !== null) { out.push(cur.replace(/\n$/, '')); cur = null } }
+  for (const n of el.childNodes) {
+    if (isBlock(n)) { flush(); out.push(...blockLines(n)) } else cur = (cur ?? '') + inlineText(n)
+  }
+  flush()
+  return out.length ? out.join('\n').split('\n') : ['']
+}
+const toText = el => (el.childNodes.length ? blockLines(el).join('\n') : '')
+
+function markDone() {
+  for (const d of edBody.children) d.classList?.toggle('done', /^\s*(?:- )?\[x\]/i.test(d.textContent))
+  edBody.classList.toggle('blank', !edBody.textContent.replaceAll(ZW, '') && edBody.querySelectorAll('div').length <= 1)
 }
 
-// Wraps the selection in a mark, or takes the mark off if it is already there
-function format(m) {
+// The rest of the app reads and writes the body like a text field
+Object.defineProperty(edBody, 'value', {
+  get: () => toText(edBody),
+  set: v => { edBody.innerHTML = toHtml(v); markDone() },
+})
+Object.defineProperty(edBody, 'readOnly', {
+  get: () => edBody.contentEditable !== 'true',
+  set: ro => { edBody.contentEditable = ro ? 'false' : 'true' },
+})
+try { document.execCommand('defaultParagraphSeparator', false, 'div'); document.execCommand('styleWithCSS', false, false) } catch { /* old browsers */ }
+
+// Where the caret is: its line (a child of the body) and how far into that line's text it sits
+function caretLine() {
+  const sel = getSelection()
+  if (!sel.rangeCount || !edBody.contains(sel.anchorNode)) return null
+  let node = sel.anchorNode
+  if (node === edBody) {
+    // the caret sits between lines; Chrome then means the line after it
+    node = edBody.childNodes[sel.anchorOffset] || edBody.lastChild
+    if (!node) return null
+  }
+  while (node.parentNode !== edBody) node = node.parentNode
+  if (!isBlock(node)) { document.execCommand('formatBlock', false, 'div'); return caretLine() }
+  const r = document.createRange()
+  r.selectNodeContents(node)
+  r.setEnd(sel.anchorNode, sel.anchorOffset)
+  return { line: node, at: r.toString().replaceAll(ZW, '').length, collapsed: sel.isCollapsed }
+}
+// Selects characters start..end of one line's text
+function selectIn(line, start, end) {
+  const walk = document.createTreeWalker(line, NodeFilter.SHOW_TEXT)
+  const r = document.createRange()
+  let pos = 0, n, s = false
+  while ((n = walk.nextNode())) {
+    const len = n.data.length
+    if (!s && start <= pos + len) { r.setStart(n, start - pos); s = true }
+    if (s && end <= pos + len) { r.setEnd(n, end - pos); break }
+    pos += len
+  }
+  const sel = getSelection(); sel.removeAllRanges(); sel.addRange(r)
+}
+
+// Formatting: the browser's own commands, so undo keeps working; code is ours
+function format(kind) {
   if (edBody.readOnly) return
-  const v = edBody.value, s = edBody.selectionStart, e = edBody.selectionEnd, w = m.length
-  const inner = v.slice(s, e)
   edBody.focus()
-  if (v.slice(s - w, s) === m && v.slice(e, e + w) === m) {
-    edBody.setSelectionRange(s - w, e + w); insert(inner); edBody.setSelectionRange(s - w, e - w)
-  } else if (inner.length > 2 * w && inner.startsWith(m) && inner.endsWith(m)) {
-    insert(inner.slice(w, -w)); edBody.setSelectionRange(s, e - 2 * w)
-  } else {
-    insert(`${m}${inner}${m}`); edBody.setSelectionRange(s + w, e + w)
+  if (kind === 'b') document.execCommand('bold')
+  else if (kind === 'i') document.execCommand('italic')
+  else if (kind === 's') document.execCommand('strikeThrough')
+  else toggleCode()
+}
+function toggleCode() {
+  const sel = getSelection()
+  if (!sel.rangeCount) return
+  const code = sel.anchorNode?.parentElement?.closest('code')
+  if (code && edBody.contains(code)) {
+    if (sel.isCollapsed) {
+      // the caret steps out of the code, to carry on in plain text
+      const after = document.createTextNode(ZW)
+      code.after(after)
+      sel.collapse(after, 1)
+    } else {
+      const r = document.createRange(); r.selectNode(code)
+      sel.removeAllRanges(); sel.addRange(r)
+      document.execCommand('insertText', false, code.textContent.replaceAll(ZW, ''))
+    }
+    return
+  }
+  const text = sel.toString()
+  if (text.includes('\n')) return
+  document.execCommand('insertHTML', false, `<code>${text ? esc(text) : ZW}</code>${text ? '' : ''}`)
+  if (!text) {
+    const c = getSelection().anchorNode?.parentElement?.closest('code') || edBody.querySelector('code:last-of-type')
+    if (c?.firstChild) getSelection().collapse(c.firstChild, c.firstChild.data.length)
   }
 }
-const FORMATS = { b: '**', i: '_', s: '~~', code: '`' }
 for (const b of $$('[data-fmt]')) {
   b.addEventListener('pointerdown', e => e.preventDefault())   // keep the selection in the note
-  b.addEventListener('click', () => format(FORMATS[b.dataset.fmt]))
+  b.addEventListener('click', () => format(b.dataset.fmt))
 }
 edBody.addEventListener('keydown', e => {
   if (!(e.ctrlKey || e.metaKey) || e.altKey) return
   const k = e.key.toLowerCase()
-  const m = k === 'b' ? '**' : k === 'i' ? '_' : k === 'e' ? '`' : (k === 'x' && e.shiftKey) ? '~~' : null
-  if (m) { e.preventDefault(); format(m) }
+  const kind = k === 'b' ? 'b' : k === 'i' ? 'i' : k === 'e' ? 'code' : (k === 'x' && e.shiftKey) ? 's' : null
+  if (k === 'u') e.preventDefault()   // no underline: it is not one of the four marks
+  if (kind) { e.preventDefault(); format(kind) }
+})
+// Pasted and dropped text comes in plain, so no outside styles get into a note
+edBody.addEventListener('paste', e => {
+  e.preventDefault()
+  document.execCommand('insertText', false, e.clipboardData.getData('text/plain'))
+})
+edBody.addEventListener('drop', e => {
+  const t = e.dataTransfer?.getData('text/plain')
+  if (t == null) return
+  e.preventDefault()
+  const pos = document.caretRangeFromPoint?.(e.clientX, e.clientY)
+  if (pos) { const sel = getSelection(); sel.removeAllRanges(); sel.addRange(pos) }
+  document.execCommand('insertText', false, t)
 })
 
 function closeEditor(silent = false) {
@@ -411,7 +537,7 @@ function closeEditor(silent = false) {
   render()
 }
 $('#backBtn').addEventListener('click', () => closeEditor())
-addEventListener('popstate', () => { if (S.open && !matchMedia('(min-width: 900px)').matches) closeEditor(true) })
+addEventListener('popstate', () => { if (S.open && !wide()) closeEditor(true) })
 
 function onEdit() {
   editDirty = true
@@ -421,8 +547,14 @@ function onEdit() {
   editTimer = setTimeout(commitEdit, 300)
 }
 edTitle.addEventListener('input', () => { grow(); onEdit() })
-edBody.addEventListener('input', () => { paint(); grow(); onEdit() })
-edTitle.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); edBody.focus(); edBody.setSelectionRange(0, 0) } })
+edBody.addEventListener('input', () => { markDone(); onEdit() })
+edTitle.addEventListener('keydown', e => {
+  if (e.key !== 'Enter') return
+  e.preventDefault()
+  edBody.focus()
+  const first = edBody.firstChild
+  if (first) getSelection().collapse(first, 0)
+})
 for (const el of [edTitle, edBody]) el.addEventListener('blur', () => commitEdit())
 addEventListener('resize', grow)
 
@@ -433,9 +565,10 @@ function commitEdit() {
   const n = S.notes.get(S.open)
   if (!n || n.state === 'trashed') return
   const title = edTitle.value.replace(/\n/g, ' ')
-  if (n.title === title && n.body === edBody.value) { $('#edSaved').textContent = 'Saved'; return }
+  const text = edBody.value
+  if (n.title === title && n.body === text) { $('#edSaved').textContent = 'Saved'; return }
   n.title = title
-  n.body = edBody.value
+  n.body = text
   n.updated = Date.now()
   if (fresh === n.id && (n.title.trim() || n.body.trim())) fresh = null
   dates(n)
@@ -446,40 +579,32 @@ function commitEdit() {
 // Lists keep going: Enter after "- ", "* ", "1. " or "[ ] " starts the next item; Enter on an empty item ends the list
 edBody.addEventListener('keydown', e => {
   if (e.key !== 'Enter' || e.shiftKey || e.isComposing || edBody.readOnly) return
-  const v = edBody.value, at = edBody.selectionStart
-  if (at !== edBody.selectionEnd) return
-  const start = v.lastIndexOf('\n', at - 1) + 1
-  const line = v.slice(start, at)
-  const m = line.match(/^(\s*)(- \[[ x]\] |\[[ x]\] |[-*•] |(\d+)[.)] )/i)
+  const c = caretLine()
+  if (!c || !c.collapsed) return
+  const text = c.line.textContent.replaceAll(ZW, '')
+  const m = text.slice(0, c.at).match(/^(\s*)(- \[[ x]\] |\[[ x]\] |[-*•] |(\d+)[.)] )/i)
   if (!m) return
   e.preventDefault()
-  if (line.trim() === m[2].trim()) { edBody.setSelectionRange(start, at); insert(''); return }
+  if (text.trim() === m[2].trim()) { selectIn(c.line, 0, text.length); document.execCommand('delete'); return }
   let mark = m[2]
   if (m[3]) mark = `${Number(m[3]) + 1}${m[2].trim().slice(-1)} `
   mark = mark.replace(/\[x\]/i, '[ ]')
-  insert(`\n${m[1]}${mark}`)
+  document.execCommand('insertParagraph')
+  document.execCommand('insertText', false, `${m[1]}${mark}`)
 })
 // Tapping the box of a "[ ]" line ticks it, and tapping "[x]" unticks it
 edBody.addEventListener('click', () => {
-  if (edBody.readOnly || edBody.selectionStart !== edBody.selectionEnd) return
-  const v = edBody.value, at = edBody.selectionStart
-  const start = v.lastIndexOf('\n', at - 1) + 1
-  const m = v.slice(start).match(/^(\s*(?:- )?)\[( |x)\]/i)
+  if (edBody.readOnly) return
+  const c = caretLine()
+  if (!c || !c.collapsed) return
+  const text = c.line.textContent.replaceAll(ZW, '')
+  const m = text.match(/^(\s*(?:- )?)\[( |x)\]/i)
   if (!m) return
-  const box = start + m[1].length
-  if (at < box || at > box + 3) return
-  edBody.setSelectionRange(box, box + 3)
-  insert(m[2] === ' ' ? '[x]' : '[ ]')
-  edBody.setSelectionRange(box + 3, box + 3)
+  const box = m[1].length
+  if (c.at < box || c.at > box + 3) return
+  selectIn(c.line, box, box + 3)
+  document.execCommand('insertText', false, m[2] === ' ' ? '[x]' : '[ ]')
 })
-// Through execCommand when it works, so the browser's own undo keeps working
-function insert(text) {
-  edBody.focus()
-  if (!document.execCommand?.('insertText', false, text)) {
-    edBody.setRangeText(text, edBody.selectionStart, edBody.selectionEnd, 'end')
-    edBody.dispatchEvent(new Event('input'))
-  }
-}
 
 // A new note that was never written in is not kept
 function dropIfEmpty(id) {
@@ -678,19 +803,36 @@ $('#eraseBtn').addEventListener('click', async () => {
 /* ---------- export and import ---------- */
 
 const stamp = () => new Date().toISOString().slice(0, 10)
-function download(name, text, type) {
+// A browser downloads the file; the native app asks where to save it (web views there cannot download)
+async function download(name, text, type) {
+  if (NATIVE) {
+    const path = await T.dialog.save({ defaultPath: name, filters: [{ name: 'Jot export', extensions: ['json'] }] })
+    if (!path) return false
+    await T.fs.writeTextFile(path, text)
+    return true
+  }
   const url = URL.createObjectURL(new Blob([text], { type }))
   const a = h('a', { href: url, download: name })
   document.body.append(a); a.click(); a.remove()
   setTimeout(() => URL.revokeObjectURL(url), 4000)
+  return true
 }
+
+// In the native app, a web link opens in the browser instead of replacing Jot
+if (NATIVE) document.addEventListener('click', e => {
+  const a = e.target.closest('a[href^="http"]')
+  if (!a) return
+  e.preventDefault()
+  T.opener.openUrl(a.href).catch(() => {})
+})
 
 $('#exportBtn').addEventListener('click', async () => {
   commitEdit(); await flushAll()
   const notes = [...S.notes.values()].filter(n => !isLocked(n)).map(record)
   // Locked notes leave as they are stored: sealed, with the header that opens them
   const locked = S.lheader ? { header: S.lheader, notes: (await DB.all('locked')).map(r => ({ id: r.id, iv: V.b64(r.iv), ct: V.b64(r.ct) })) } : null
-  download(`jot-${stamp()}.json`, JSON.stringify({ app: 'jot', kind: 'notes', v: 2, made: new Date().toISOString(), notes, locked }, null, 2), 'application/json')
+  const saved = await download(`jot-${stamp()}.json`, JSON.stringify({ app: 'jot', kind: 'notes', v: 2, made: new Date().toISOString(), notes, locked }, null, 2), 'application/json').catch(() => null)
+  if (!saved) { $('#importResult').textContent = saved === false ? '' : 'Could not save the file.'; return }
   const l = locked?.notes.length || 0
   $('#importResult').textContent = `Exported ${notes.length} ${notes.length === 1 ? 'note' : 'notes'}${l ? ` and ${l} locked, still encrypted` : ''}.`
 })
@@ -841,8 +983,9 @@ async function lockLocked(why) {
   await flushAll()
   S.lkey = null
   for (const [id, n] of S.notes) if (isLocked(n)) S.notes.delete(id)
-  if (isLocked(open)) { edTitle.value = edBody.value = ''; paint() }
+  if (isLocked(open)) edTitle.value = edBody.value = ''
   render()
+  followTab()
   if (why === 'now') toast('Locked')
 }
 
