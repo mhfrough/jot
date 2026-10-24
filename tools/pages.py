@@ -281,6 +281,14 @@ page('design', 'P0', 'Design: the Jot design system, paper, ink and a grid',
 page('changelog', 'P6', 'Changelog: every version of Jot',
      'What changed in each version of Jot, newest first.',
      'Changelog', """        <article class="ver">
+          <h2>1.3.1 <span class="updated">24 October 2026</span></h2>
+          <ul>
+            <li>Android: typing no longer pushes the app up under the status bar; Jot shrinks above the keyboard and keeps its toolbar in view.</li>
+            <li>Jot's own icon on Android (it had shipped the default one) and a sharp Windows icon at every size.</li>
+            <li>App details name mhfrough as the publisher, with the website and the MIT licence.</li>
+          </ul>
+        </article>
+        <article class="ver">
           <h2>1.3.0 <span class="updated">24 October 2026</span></h2>
           <ul>
             <li>Jot for Windows: a 1.3 MB installer with no admin rights needed, its own title bar, and a window that reopens where you left it. Built with Tauri 2.</li>
