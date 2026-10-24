@@ -435,6 +435,21 @@ await test('Website: every page loads clean with no sideways scroll at 390 px', 
     check(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), `/${p} scrolls sideways`)
     await ctx.close()
   }
+  // Every page has the main menu, and each menu link lands with its section just under the bar
+  {
+    const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 }, reducedMotion: 'reduce' })
+    const page = await ctx.newPage()
+    for (const p of ['', 'design/', 'credits/']) {
+      await page.goto(`${BASE}/${p}`)
+      check((await page.$$('.nav a')).length === 5, `/${p} has no main menu`)
+    }
+    for (const id of ['features', 'local', 'move', 'get', 'faq']) {
+      await page.goto(`${BASE}/credits/`); await page.click(`.nav a[href$="#${id}"]`); await page.waitForURL(new RegExp(`#${id}$`)); await sleep(300)
+      const gap = await page.evaluate(i => document.getElementById(i).getBoundingClientRect().top - document.querySelector('.top').getBoundingClientRect().bottom, id)
+      check(gap >= 0 && gap <= 40, `#${id} lands ${Math.round(gap)} px under the bar`)
+    }
+    await ctx.close()
+  }
   // Every page's footer lists the same set of the maker's other tools as the home page
   const tools = async p => { const ctx = await browser.newContext(); const page = await ctx.newPage(); await page.goto(`${BASE}/${p}`); const t = await page.$$eval('.foot-col:last-of-type a', as => as.map(a => a.href)); await ctx.close(); return t.join(' ') }
   const home = await tools('')
