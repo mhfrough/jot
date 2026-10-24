@@ -62,6 +62,8 @@ That makes the Windows installer (`.exe`) on Windows, or `.deb`, `.rpm` and `.Ap
 npm run android:build
 ```
 
+On Windows without Developer Mode, Tauri cannot symlink the Rust library into the Android project, so use `npm run android:build:windows` instead (`tools/android-local.mjs`): it copies the library and runs Gradle itself. It builds for phones (`aarch64`) unless you name targets, for example `node ../tools/android-local.mjs aarch64 x86_64`.
+
 The APK is signed when `native/src-tauri/gen/android/keystore.properties` exists (`storeFile`, `password`, `keyAlias=jot`); it is never committed. Keep the keystore safe: an app update must be signed with the same key. The `Native apps` workflow (`native.yml`, run by hand) builds all of them in GitHub Actions; Android there needs the `ANDROID_KEYSTORE_B64` and `ANDROID_KEYSTORE_PASSWORD` secrets. A version tag (`release.yml`) releases only the web app for now.
 
 ## Run it

@@ -10,7 +10,8 @@
     "dev": "npm run sync && tauri dev",
     "build": "npm run sync && tauri build",
     "android:init": "tauri android init",
-    "android:build": "npm run sync && tauri android build --apk"
+    "android:build": "npm run sync && tauri android build --apk",
+    "android:build:windows": "npm run sync && node ../tools/android-local.mjs"
   },
   "devDependencies": {
     "@tauri-apps/cli": "2.12.3"
