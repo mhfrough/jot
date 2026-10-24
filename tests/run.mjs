@@ -96,7 +96,8 @@ await test('Opens straight away: no sign-in, no foreign requests', async () => {
   const { ctx, page } = await fresh()
   check(await page.isVisible('#listPane') && await page.isVisible('#tabs'), 'the notes list is not showing')
   check(!(await page.isVisible('input[type="password"]')), 'a password field shows on opening')
-  check(await page.isVisible('#empty'), 'no empty state for a new device')
+  // the list is drawn on the next animation frame after the app is ready
+  check(await page.waitForSelector('#empty', { state: 'visible', timeout: 3000 }).then(() => true, () => false), 'no empty state for a new device')
   await write(page, 'Hello', 'first words')
   await sleep(300)
   check(page.foreign.length === 0, `requests left the site: ${page.foreign.join(', ')}`)

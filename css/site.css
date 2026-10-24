@@ -253,6 +253,8 @@ path.gi[d^="M6 36"] { fill: none; stroke: var(--ink); stroke-width: 3; }
 .plat:hover .glyph.logo { fill: var(--signal-ink); color: var(--signal-ink); }
 .plat h3, .plat p { grid-row: auto; }
 .plat .btn { justify-self: start; align-self: end; margin-top: 8px; }
+.plat .dl { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.plat .dl .btn { margin-top: 0; }
 .tag { justify-self: start; padding: 2px 8px; font-size: 10.5px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; border: 1px solid var(--ink); }
 .tag.on { background: var(--ink); color: var(--paper); }
 .soon { align-self: end; padding-top: 12px; border-top: 1px dashed var(--rule-2); font-size: 12px !important; color: var(--ink-3) !important; }

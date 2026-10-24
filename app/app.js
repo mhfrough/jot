@@ -5,7 +5,7 @@
 import * as DB from './db.js'
 import * as V from './vault.js'
 
-const VERSION = '1.2.1'
+const VERSION = '1.3.0'
 const TRASH_DAYS = 30
 const HIDDEN_LOCK_MS = 30000   // Locked closes this long after Jot goes to the background
 

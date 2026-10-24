@@ -52,8 +52,9 @@ What is still weak, and what would fix it:
 | Platform | Route | State |
 | --- | --- | --- |
 | Web, any OS | PWA from GitHub Pages | v1.0.0 |
-| Windows, Linux | Tauri 2 installers from GitHub releases | coming soon (the Windows build works) |
-| Android | Tauri 2 APK, signed | coming soon |
+| Windows | Tauri 2 installer from GitHub releases | v1.3.0 |
+| Android | Tauri 2 APK, signed, arm64 and armv7 | v1.3.0 |
+| Linux | Tauri 2 .deb, .rpm, .AppImage (native.yml) | built in CI, not released |
 | macOS, iOS | Tauri 2; needs a Mac (and an Apple Developer account for iOS) | later |
 
 ### PWA or native

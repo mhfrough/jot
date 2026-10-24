@@ -23,7 +23,7 @@ Jot replaces Simple Notes on an Android phone. It keeps what made that app good,
 | Look | Paper (light) or carbon (dark), JetBrains Mono, three text sizes, sort by updated, created or A–Z |
 | Export and import | One JSON file with everything (locked notes stay encrypted); imports Simple Notes and Fossify Notes exports and `.txt` files |
 | Offline | Installs as an app from the browser and opens with no network |
-| Apps | Windows, Linux, Android, macOS and iOS apps are coming soon; today every one of them runs Jot as an installed web app |
+| Apps | Windows and Android apps ([download](https://github.com/mhfrough/jot/releases/latest)); Linux, macOS and iOS run Jot as an installed web app, with apps coming later |
 
 <p>
   <img src="assets/img/phone-list-light-390.webp" alt="The notes list, light" width="200">
@@ -46,9 +46,9 @@ In the browser's IndexedDB on the device you use, and nowhere else. There is no 
 | Export | Locked notes leave sealed, with the header; a new device opens them with the same password |
 | Forgotten password | No reset. Settings can delete every locked note so the tab can start again |
 
-## The apps (coming soon)
+## The apps
 
-Not released yet. `native/` wraps the same files in [Tauri 2](https://tauri.app) for Windows, Linux and Android. `tools/sync-native.mjs` copies the app into `native/ui` with flat paths and no CSP meta (Tauri sets its own). In the apps, Export opens a save dialog and web links open in the browser; there is no service worker.
+Windows and Android are released (from 1.3.0); Linux is built by CI but not released yet. `native/` wraps the same files in [Tauri 2](https://tauri.app) for Windows, Linux and Android. `tools/sync-native.mjs` copies the app into `native/ui` with flat paths and no CSP meta (Tauri sets its own). In the apps, Export opens a save dialog and web links open in the browser; there is no service worker.
 
 ```bash
 cd native
