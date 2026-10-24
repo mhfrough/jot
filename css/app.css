@@ -380,6 +380,5 @@ body.reading .toast { bottom: calc(52px + env(safe-area-inset-bottom)); }
 .tb-min:hover { background: #febc2e; }
 .tb-max:hover { background: #28c840; }
 /* Their names hang from the left so the first is not cut off at the window's edge */
-.tb-dot[data-tip]:hover::after { left: -2px; translate: none; }
 .tb-dot:active { filter: brightness(0.85); }
 .tb-title { flex: 1; align-self: stretch; display: flex; align-items: center; color: var(--ink-3); font-size: 12px; font-weight: 600; letter-spacing: 0.02em; }
