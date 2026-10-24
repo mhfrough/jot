@@ -27,13 +27,18 @@
   },
   "bundle": {
     "active": true,
-    "targets": ["nsis", "deb", "rpm", "appimage"],
+    "targets": [
+      "nsis",
+      "deb",
+      "rpm",
+      "appimage"
+    ],
     "category": "Productivity",
     "shortDescription": "Plain notes that stay on your device",
-    "longDescription": "Jot is a quiet notes app: no sign-in, no server, no tracking. Notes stay on your device, show when they were created and last updated, and can be locked behind a password.",
-    "copyright": "Copyright 2026 Mohammad Hamza. MIT licence.",
+    "longDescription": "Jot is a plain notes app by mhfrough: no sign-in, no server, no tracking. Notes stay on your device, work offline, show when each one was created and last updated, and can be locked behind a password. Formatting, checklists, pins, search, archive and trash, export and import. https://mhfrough.github.io/jot/",
+    "copyright": "© 2026 mhfrough (Mohammad Hamza). MIT licence.",
     "homepage": "https://mhfrough.github.io/jot/",
-    "publisher": "Mohammad Hamza",
+    "publisher": "mhfrough",
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
@@ -42,7 +47,10 @@
       "icons/icon.ico"
     ],
     "windows": {
-      "webviewInstallMode": { "type": "downloadBootstrapper", "silent": true },
+      "webviewInstallMode": {
+        "type": "downloadBootstrapper",
+        "silent": true
+      },
       "nsis": {
         "installMode": "currentUser",
         "displayLanguageSelector": false,
@@ -53,7 +61,10 @@
       }
     },
     "linux": {
-      "deb": { "section": "text" }
-    }
+      "deb": {
+        "section": "text"
+      }
+    },
+    "license": "MIT"
   }
 }
