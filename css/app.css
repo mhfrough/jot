@@ -95,8 +95,7 @@ mark { background: var(--mark); color: inherit; border-radius: 0; }
 
 /* ---------- shell ---------- */
 
-.shell { display: grid; grid-template-columns: 1fr; height: 100dvh; opacity: 0; transition: opacity 0.2s; }
-body.ready .shell { opacity: 1; }
+.shell { display: grid; grid-template-columns: 1fr; height: 100dvh; }
 
 .side {
   display: grid; grid-template-rows: auto auto auto minmax(0, 1fr) auto;
@@ -286,8 +285,8 @@ body.reading .desk { display: grid; animation: slide 0.28s var(--ease); }
   .sheet { padding: 56px 56px 120px; }
   .ed-foot { padding-inline: 24px; }
   .desk-empty { display: grid; place-content: center; justify-items: center; gap: 14px; color: var(--ink-3); font-size: 13px; }
-  .de-mark { font-size: 56px; font-weight: 800; letter-spacing: -0.05em; color: var(--rule-2); display: flex; align-items: baseline; gap: 4px; }
-  .de-mark .caret { background: var(--rule-2); }
+  .de-mark { font-size: 56px; font-weight: 800; letter-spacing: -0.05em; color: var(--ink-3); display: flex; align-items: baseline; gap: 4px; }
+  .de-mark .caret { background: var(--ink-3); }
 }
 @media (min-width: 1400px) { :root { --side-w: 25rem; } }
 

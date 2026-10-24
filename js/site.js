@@ -24,7 +24,7 @@
     set(next); apply(next)
   })
 
-  /* GitHub stars: the cached count first, then GitHub when it is over five minutes old */
+  /* GitHub stars: the cached count first, then GitHub when it is over an hour old (its anonymous limit is 60 an hour) */
   for (const a of document.querySelectorAll('[data-stars]')) {
     const repo = a.dataset.stars, key = `stars:${repo}`
     const show = n => {
@@ -35,7 +35,7 @@
     let cached = null
     try { cached = JSON.parse(localStorage.getItem(key)) } catch { /* none yet */ }
     if (typeof cached?.n === 'number') show(cached.n)
-    if (cached && Date.now() - cached.t < 5 * 60e3) continue
+    if (cached && Date.now() - cached.t < 60 * 60e3) continue
     // Give up after 5 s: a slow API must never hold anything up
     fetch(`https://api.github.com/repos/${repo}`, { headers: { Accept: 'application/vnd.github+json' }, signal: AbortSignal.timeout?.(5000) })
       .then(r => (r.ok ? r.json() : null))

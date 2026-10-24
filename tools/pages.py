@@ -156,6 +156,7 @@ page('credits', 'P4', 'Credits and licences for Jot',
             <tr><td><a href="https://github.com/JetBrains/JetBrainsMono">JetBrains Mono</a></td><td>JetBrains</td><td>SIL Open Font License 1.1</td></tr>
             <tr><td><a href="https://phosphoricons.com">Phosphor Icons</a> (in the app)</td><td>Helena Zhang and Tobias Fried</td><td>MIT</td></tr>
             <tr><td><a href="https://playwright.dev">Playwright</a> (tests and screenshots)</td><td>Microsoft</td><td>Apache 2.0</td></tr>
+            <tr><td><a href="https://simpleicons.org">Simple Icons</a> (Android, Apple and Linux logos)</td><td>Simple Icons contributors</td><td>CC0 1.0</td></tr>
           </tbody>
         </table>
         <h2>Pictures</h2>
@@ -167,10 +168,10 @@ def sw(name, hexv, role):
     return f'<li class="sw"><span class="sw-chip" style="background:{hexv}"></span><b>{name}</b><code>{hexv}</code><span>{role}</span></li>'
 
 LIGHT = [('paper', '#f1ece2', 'the page'), ('sheet', '#f8f5ee', 'the note, dialogs'), ('ink', '#1f1d1a', 'text, solid shapes'),
-         ('ink-2', '#5d574d', 'supporting text'), ('ink-3', '#8b8478', 'labels, dates'), ('rule', '#ddd5c6', 'hairlines'),
+         ('ink-2', '#5d574d', 'supporting text'), ('ink-3', '#645e53', 'labels, dates, 4.6:1'), ('rule', '#ddd5c6', 'hairlines'),
          ('signal', '#b07d00', 'marks and shapes'), ('signal-ink', '#8a5f00', 'signal as text, 4.8:1')]
 DARK = [('paper', '#151412', 'the page'), ('sheet', '#1b1a17', 'the note, dialogs'), ('ink', '#ebe5d9', 'text, solid shapes'),
-        ('ink-2', '#a39b8b', 'supporting text'), ('ink-3', '#6f695e', 'labels, dates'), ('rule', '#2a2824', 'hairlines'),
+        ('ink-2', '#a39b8b', 'supporting text'), ('ink-3', '#958f81', 'labels, dates, 4.8:1'), ('rule', '#2a2824', 'hairlines'),
         ('signal', '#e0aa2a', 'marks, shapes and text'), ('select', '#272420', 'the open note in the list')]
 SW_LIGHT = ''.join(sw(*c) for c in LIGHT)
 SW_DARK = ''.join(sw(*c) for c in DARK)
@@ -264,9 +265,12 @@ page('design', 'P0', 'Design: the Jot design system, paper, ink and a grid',
 page('changelog', 'P6', 'Changelog: every version of Jot',
      'What changed in each version of Jot, newest first.',
      'Changelog', """        <article class="ver">
-          <h2>1.2.0 <span class="tag">Next</span></h2>
+          <h2>1.2.0 <span class="updated">24 October 2026</span></h2>
           <ul>
-            <li>Desktop and Android apps built with Tauri, on GitHub releases.</li>
+            <li>Formatting now shows as formatting: bold is bold, with no marks on screen. Notes are still stored as plain text.</li>
+            <li>Switching tabs switches the note on the right, and closing Locked closes an open locked note.</li>
+            <li>Accessibility and SEO pass: stronger contrast for labels and dates, a main heading and landmark in the app, structured data for the app and the questions.</li>
+            <li>Real platform logos on the Get Jot section. Apps for Windows, Linux, Android, macOS and iOS are coming soon.</li>
           </ul>
         </article>
         <article class="ver">

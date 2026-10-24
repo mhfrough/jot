@@ -1,6 +1,6 @@
 # <img src="icon.svg" alt="" width="36" height="36"> Jot
 
-Plain notes. Nothing else. A quiet notes app for Android and the web: no sign-in, no server, no tracking. Notes stay on your device, open offline, and show when each one was created and last updated.
+Plain notes. Nothing else. A quiet notes app that runs in any browser and installs like an app: no sign-in, no server, no tracking. Notes stay on your device, open offline, and show when each one was created and last updated.
 
 <a href="https://mhfrough.github.io/jot/"><img src="assets/og-image.jpg" alt="Jot: plain notes, nothing else. The notes list on a phone over a grid of circles and squares." width="720"></a>
 
@@ -16,13 +16,14 @@ Jot replaces Simple Notes on an Android phone. It keeps what made that app good,
 | Dates | Created and updated, day and time, at the top of every note |
 | Search | Titles and text, as you type, with matches marked |
 | Pins | Pinned notes stay above the rest |
-| Formatting | `**bold**`, `_italic_`, `~~strike~~` and `` `code` ``, shown as you type; Ctrl B, I, Shift X, E |
+| Formatting | Bold, italic, strike and code, shown formatted with no marks on screen; stored as `**bold**`, `_italic_`, `~~strike~~` and `` `code` ``; Ctrl B, I, Shift X, E |
 | Checklists | Plain `[ ]` lines; tap the box to tick it; ticked lines fade; lists carry on when you press Enter |
 | Locked | A tab with its own password: notes encrypted on the device, closed after idle minutes or 30 s in the background |
 | Archive and trash | Put away or delete with an undo; the trash empties after 30 days |
 | Look | Paper (light) or carbon (dark), JetBrains Mono, three text sizes, sort by updated, created or A–Z |
 | Export and import | One JSON file with everything (locked notes stay encrypted); imports Simple Notes and Fossify Notes exports and `.txt` files |
 | Offline | Installs as an app from the browser and opens with no network |
+| Apps | Windows, Linux, Android, macOS and iOS apps are coming soon; today every one of them runs Jot as an installed web app |
 
 <p>
   <img src="assets/img/phone-list-light-390.webp" alt="The notes list, light" width="200">
@@ -44,6 +45,24 @@ In the browser's IndexedDB on the device you use, and nowhere else. There is no 
 | Closing | After 1, 5 or 15 minutes without use, 30 s after Jot goes to the background, or Lock now. Closing drops the key and the opened notes |
 | Export | Locked notes leave sealed, with the header; a new device opens them with the same password |
 | Forgotten password | No reset. Settings can delete every locked note so the tab can start again |
+
+## The apps (coming soon)
+
+Not released yet. `native/` wraps the same files in [Tauri 2](https://tauri.app) for Windows, Linux and Android. `tools/sync-native.mjs` copies the app into `native/ui` with flat paths and no CSP meta (Tauri sets its own). In the apps, Export opens a save dialog and web links open in the browser; there is no service worker.
+
+```bash
+cd native
+npm install
+npm run build
+```
+
+That makes the Windows installer (`.exe`) on Windows, or `.deb`, `.rpm` and `.AppImage` on Linux, under `native/src-tauri/target/release/bundle/`. For Android, with the Android SDK, NDK and a JDK 17:
+
+```bash
+npm run android:build
+```
+
+The APK is signed when `native/src-tauri/gen/android/keystore.properties` exists (`storeFile`, `password`, `keyAlias=jot`); it is never committed. Keep the keystore safe: an app update must be signed with the same key. The `Native apps` workflow (`native.yml`, run by hand) builds all of them in GitHub Actions; Android there needs the `ANDROID_KEYSTORE_B64` and `ANDROID_KEYSTORE_PASSWORD` secrets. A version tag (`release.yml`) releases only the web app for now.
 
 ## Run it
 
@@ -72,15 +91,36 @@ npm test
 | Pin, archive, trash | Pin order, undo, archive and back, read-only trash, restore, delete forever, empty trash |
 | Search | Filters and marks matches, empty state |
 | Checklists | Tap to tick, Enter carries a list on, Enter on an empty item ends it |
-| Formatting | Shortcuts and buttons wrap and unwrap marks; the styled copy wraps to the same height as the text; marks are not in the list |
+| Formatting | Shortcuts and buttons format the selection; it shows formatted with no marks on screen, is stored with marks, survives a reload unchanged; paste comes in plain |
+| Follow the tab | Switching tabs switches the open note; locking closes an open locked note |
 | Locked | No plain text or password in storage, lock and reopen, wrong password refused, move in and out, deletes skip the trash |
 | Locked closing | Closes after the idle time and 30 s in the background (with Playwright's fake clock) |
 | Locked export | Exports stay encrypted, open on a new device; change and forget the password |
 | Export and import | Export file, import on a new device, duplicates skipped, Simple Notes and text files |
-| Settings | Theme, font, size and sort apply and survive a reload |
+| Settings | Theme, size and sort apply and survive a reload |
 | Phone | No sideways scroll at 390 px, editor over the list, browser back closes the note |
 | Offline | The service worker serves the app with the network off |
 | Website | Every page loads with no errors and no sideways scroll at 390 px |
+
+## Quality checks
+
+```bash
+node tests/audit.mjs
+node tests/lighthouse.mjs
+```
+
+`audit.mjs` runs axe-core (WCAG 2.2 A and AA plus best practices) on every page of the site and on the app's screens and dialogs (list, open note, settings, shortcuts, Locked, a question, a toast, the phone layout), in light and dark, and checks each page's title, description, canonical link, Open Graph tags, headings, image alt text and JSON-LD (WebSite, SoftwareApplication, WebApplication, FAQPage, WebPage, BreadcrumbList). `lighthouse.mjs` runs Lighthouse on the home page, the app, the design page and a text page, phone and desktop.
+
+Lighthouse 12.8, 24 October 2026, served locally:
+
+| Page | Phone: performance · accessibility · best practices · SEO | Desktop |
+| --- | --- | --- |
+| Home | 97 · 100 · 100 · 100 | 100 · 100 · 100 · 100 |
+| App | 99 · 100 · 100 · 100 | 100 · 100 · 100 · 100 |
+| Design | 97 · 100 · 100 · 100 | 98 · 100 · 100 · 100 |
+| Privacy | 99 · 100 · 100 · 100 | 100 · 100 · 100 · 100 |
+
+axe-core: no violations on any page or app screen, light or dark.
 
 `npm run shots` retakes the screenshots in `assets/img/`; `node tools/icons.mjs` renders the app icons and the social card; `npm run pages` builds the inner pages.
 
@@ -95,8 +135,9 @@ npm test
 | `css/paper.css` | The shared font and colours: paper, ink, one ochre signal |
 | `css/app.css`, `css/site.css` | The app and the website, plain CSS with no build step |
 | `index.html`, `js/site.js` | The website |
-| `privacy/`, `terms/`, `cookies/`, `credits/`, `sitemap/` | Inner pages, built by `tools/pages.py` |
-| `tests/` | Playwright tests and the screenshot script |
+| `design/`, `changelog/`, `privacy/`, `terms/`, `cookies/`, `credits/`, `sitemap/`, `404.html` | Inner pages, built by `tools/pages.py` |
+| `native/` | The Tauri 2 apps, not released yet: `src-tauri/` (Rust, config, icons, `gen/android`), `ui/` made by `tools/sync-native.mjs` |
+| `tests/` | Playwright tests, the screenshot script, the accessibility and SEO audit, Lighthouse |
 | `PLAN.md` | Design notes: research, decisions and a self-critique |
 
 ## Credits
@@ -105,6 +146,7 @@ npm test
 | --- | --- | --- |
 | JetBrains Mono | JetBrains | SIL OFL 1.1 |
 | Phosphor Icons | Helena Zhang, Tobias Fried | MIT |
+| Simple Icons (platform logos) | Simple Icons contributors | CC0 1.0 |
 
 ## Licence
 

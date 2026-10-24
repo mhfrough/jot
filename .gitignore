@@ -5,6 +5,6 @@ dist/
 native/ui/
 native/node_modules/
 native/src-tauri/target/
-native/src-tauri/gen/
+native/src-tauri/gen/schemas/
 *.jks
 *.keystore

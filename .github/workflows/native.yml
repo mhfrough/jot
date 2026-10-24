@@ -1,0 +1,117 @@
+# Native apps (not released yet): builds the Windows installer, the Linux packages and the Android
+# app with Tauri 2 from native/, and keeps them as this run's artifacts. Run it by hand from the
+# Actions tab. When the apps are ready, these jobs move into release.yml.
+#
+# Android signing needs two repository secrets (Settings, Secrets and variables, Actions):
+#   ANDROID_KEYSTORE_B64       the release keystore, base64 encoded
+#   ANDROID_KEYSTORE_PASSWORD  its password (the key uses the same one; alias "jot")
+name: Native apps
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  desktop:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            bundles: nsis
+          - os: ubuntu-22.04
+            bundles: deb,rpm,appimage
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: native/package-lock.json
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: native/src-tauri
+      - name: Linux libraries (web view)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev librsvg2-dev patchelf file libssl-dev
+      - name: Build
+        working-directory: native
+        run: |
+          npm ci
+          npm run sync
+          npx tauri build --bundles ${{ matrix.bundles }}
+      - name: Collect the installers
+        run: |
+          mkdir -p out
+          b=native/src-tauri/target/release/bundle
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            f=$(ls $b/nsis/*-setup.exe); cp "$f" out/; cp "$f" out/Jot-setup.exe
+          else
+            f=$(ls $b/deb/*.deb); cp "$f" out/; cp "$f" out/jot_amd64.deb
+            f=$(ls $b/rpm/*.rpm); cp "$f" out/; cp "$f" out/jot.x86_64.rpm
+            f=$(ls $b/appimage/*.AppImage); cp "$f" out/; cp "$f" out/Jot.AppImage
+          fi
+          ls -la out
+      - uses: actions/upload-artifact@v4
+        with:
+          name: desktop-${{ runner.os }}
+          path: out/*
+
+  android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: native/package-lock.json
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-linux-android,armv7-linux-androideabi,x86_64-linux-android,i686-linux-android
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: native/src-tauri
+      - name: Android NDK
+        run: |
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "ndk;28.2.13676358" >/dev/null
+          echo "NDK_HOME=$ANDROID_HOME/ndk/28.2.13676358" >> "$GITHUB_ENV"
+      - name: Signing key
+        env:
+          KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_B64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+        run: |
+          if [ -z "$KEYSTORE_B64" ]; then echo "::error::Add the ANDROID_KEYSTORE_B64 and ANDROID_KEYSTORE_PASSWORD secrets to sign the Android app"; exit 1; fi
+          echo "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/jot-release.jks"
+          printf 'storeFile=%s\npassword=%s\nkeyAlias=jot\n' "$RUNNER_TEMP/jot-release.jks" "$KEYSTORE_PASSWORD" > native/src-tauri/gen/android/keystore.properties
+      - name: Build
+        working-directory: native
+        run: |
+          npm ci
+          npm run sync
+          npx tauri android build --apk
+      - name: Collect the app
+        run: |
+          v=${GITHUB_REF_NAME#v}; [ "$GITHUB_REF_TYPE" = tag ] || v=dev
+          mkdir -p out
+          f=$(ls native/src-tauri/gen/android/app/build/outputs/apk/universal/release/*.apk | head -1)
+          cp "$f" "out/jot-$v.apk"; cp "$f" out/Jot.apk
+          ls -la out
+      - uses: actions/upload-artifact@v4
+        with:
+          name: android
+          path: out/*
+

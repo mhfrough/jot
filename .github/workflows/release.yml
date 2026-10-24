@@ -1,6 +1,7 @@
-# Release: a version tag (v1.0.0) runs the tests and publishes a GitHub release with the web app
+# Release: a version tag (v1.2.0) runs the tests and publishes a GitHub release with the web app
 # as a zip you can host anywhere. Every file is attached twice: with its version in the name, and
 # with a fixed name for links through /releases/latest/download/<name>.
+# The Windows, Linux and Android apps are not released yet; native.yml builds them by hand.
 name: Release
 
 on:
@@ -30,8 +31,8 @@ jobs:
         run: |
           v=${GITHUB_REF_NAME#v}; [ "$GITHUB_REF_TYPE" = tag ] || v=dev
           mkdir -p out
-          zip -qr "out/jot-web-$v.zip" index.html icon.svg apple-touch-icon.png robots.txt sitemap.xml \
-            app css js fonts assets privacy terms cookies credits sitemap LICENSE README.md -x 'assets/og.html'
+          zip -qr "out/jot-web-$v.zip" index.html 404.html icon.svg apple-touch-icon.png robots.txt sitemap.xml \
+            app css js fonts assets design changelog privacy terms cookies credits sitemap LICENSE README.md -x 'assets/og.html'
           cp "out/jot-web-$v.zip" out/jot-web.zip
           ls -la out
       - uses: actions/upload-artifact@v4
@@ -50,6 +51,7 @@ jobs:
         with:
           path: files
           merge-multiple: true
+      - run: ls -la files
       - uses: softprops/action-gh-release@v2
         with:
           name: Jot ${{ github.ref_name }}

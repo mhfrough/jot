@@ -22,6 +22,8 @@ await png(192, 'app/icons/icon-192.png')
 await png(512, 'app/icons/icon-512.png')
 await png(512, 'app/icons/maskable-512.png', { square: true, mask: true })
 await png(180, 'apple-touch-icon.png', { square: true })
+// The native apps' source: Tauri makes every desktop and Android size from it (npm run icons in native/)
+await png(1024, 'native/src-tauri/icons/source.png', { square: true, mask: true })
 // Social card, 1200 x 630
 await page.setViewportSize({ width: 1200, height: 630 })
 await page.goto('http://localhost:8190/assets/og.html')

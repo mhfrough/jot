@@ -19,7 +19,7 @@ today, wrapped by Tauri 2 for Windows, Linux, Android and iOS next.
 | --- | --- |
 | Accounts | None. No sign-in, no passphrase: the app opens on the list |
 | Storage | IndexedDB in the browser, asks for persistent storage; export to one JSON file |
-| Type | JetBrains Mono for everything; a sans option for note text only |
+| Type | JetBrains Mono for everything, notes included (the sans option went in 1.1.0) |
 | Colour | Paper `#f1ece2` and ink `#1f1d1a`; carbon `#151412` at night. One signal: ochre `#b07d00` (`#e0aa2a` at night) for marks and shapes; `#8a5f00` where it sets text, for 4.8:1 contrast. Chosen to stand apart from Swoop's orange and Claude's clay |
 | App layout | Phone: list, then the note over it. Wide: list and note side by side, the note on a centred 42 rem column |
 | Dates | Created and updated on every note, always both, as "Today, 14:05" or "24 Oct, 14:05" |
@@ -44,17 +44,25 @@ What is still weak, and what would fix it:
   not land exactly on the page grid.
 - **Long notes** grow the editor as you type; very long notes (tens of thousands of lines) would be
   better in a virtualised editor.
-- **Storage can be cleared** by the browser or the user. The native apps (Tauri) will keep notes in
-  their own storage, out of reach of "clear site data".
+- **Storage can be cleared** by the browser or the user. The native apps (Tauri, coming soon) keep
+  notes in their own storage, out of reach of "clear site data".
 
 ## Platforms
 
 | Platform | Route | State |
 | --- | --- | --- |
 | Web, any OS | PWA from GitHub Pages | v1.0.0 |
-| Windows, Linux, macOS | Tauri 2 installers from GitHub releases | next |
-| Android | Tauri 2 APK from GitHub releases | next |
-| iOS | Tauri 2; needs a Mac, Xcode and an Apple Developer account | set up, not built |
+| Windows, Linux | Tauri 2 installers from GitHub releases | coming soon (the Windows build works) |
+| Android | Tauri 2 APK, signed | coming soon |
+| macOS, iOS | Tauri 2; needs a Mac (and an Apple Developer account for iOS) | later |
+
+### PWA or native
+
+The web app stays the one codebase. A Tauri shell adds what a browser cannot give: storage that
+"clear site data" cannot wipe, an installer, and a place for one native piece worth having, a
+Locked key kept in the Android Keystore or Windows Hello for fingerprint or face unlock. A full
+native rewrite per platform would double every change for no gain in safety over a sandboxed
+web view.
 
 ## Locked (1.1.0)
 
@@ -69,6 +77,6 @@ An opt-in tab with its own password. Everything else stays as it is, with no sig
 
 ## Formatting (1.1.0)
 
-`**bold**`, `_italic_`, `~~strike~~` and `` `code` ``, drawn live under a transparent textarea.
-The note stays plain text. This only lines up in a face where every style has the same width,
-which is why the sans option was dropped.
+`**bold**`, `_italic_`, `~~strike~~` and `` `code` ``. Since 1.2.0 the note body is a rich editor
+that shows them formatted with no marks, one `<div>` per line, and turns what you type back into
+the same plain text with marks. Paste and drop come in as plain text.
