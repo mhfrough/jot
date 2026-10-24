@@ -360,14 +360,16 @@ body.reading .toast { bottom: calc(52px + env(safe-area-inset-bottom)); }
 }
 .tb-dots { display: flex; gap: 8px; }
 .tb-dot {
-  display: grid; place-items: center; width: 12px; height: 12px; padding: 0; border: 0; border-radius: 50%;
+  position: relative; display: grid; place-items: center; width: 12px; height: 12px; padding: 0; border: 0; border-radius: 50%;
   background: var(--rule-2); color: transparent; cursor: pointer; transition: background-color 0.12s var(--ease);
 }
 .tb-dot svg { width: 8px; height: 8px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; }
-/* Grey until the pointer reaches them, then the colours everyone knows */
-.tb-dots:hover .tb-dot { color: rgb(0 0 0 / 0.6); }
-.tb-dots:hover .tb-close { background: #ff5f57; }
-.tb-dots:hover .tb-min { background: #febc2e; }
-.tb-dots:hover .tb-max { background: #28c840; }
+/* Grey until the pointer reaches one, then that one takes the colour everyone knows */
+.tb-dot:hover { color: rgb(0 0 0 / 0.6); }
+.tb-close:hover { background: #ff5f57; }
+.tb-min:hover { background: #febc2e; }
+.tb-max:hover { background: #28c840; }
+/* Their names hang from the left so the first is not cut off at the window's edge */
+.tb-dot[data-tip]:hover::after { left: -2px; translate: none; }
 .tb-dot:active { filter: brightness(0.85); }
 .tb-title { flex: 1; align-self: stretch; display: flex; align-items: center; color: var(--ink-3); font-size: 12px; font-weight: 600; letter-spacing: 0.02em; }

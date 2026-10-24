@@ -1070,9 +1070,9 @@ if (DESKTOP) {
   body.insertAdjacentHTML('afterbegin', `
     <header class="titlebar" data-tauri-drag-region>
       <div class="tb-dots">
-        <button class="tb-dot tb-close" type="button" id="winClose" tabindex="-1" aria-label="Close">${glyph('M3.5 3.5l5 5M8.5 3.5l-5 5')}</button>
-        <button class="tb-dot tb-min" type="button" id="winMin" tabindex="-1" aria-label="Minimise">${glyph('M3 6h6')}</button>
-        <button class="tb-dot tb-max" type="button" id="winMax" tabindex="-1" aria-label="Maximise">${glyph('M6 3v6M3 6h6')}</button>
+        <button class="tb-dot tb-close" type="button" id="winClose" tabindex="-1" aria-label="Close" data-tip="Close">${glyph('M3.5 3.5l5 5M8.5 3.5l-5 5')}</button>
+        <button class="tb-dot tb-min" type="button" id="winMin" tabindex="-1" aria-label="Minimise" data-tip="Minimise">${glyph('M3 6h6')}</button>
+        <button class="tb-dot tb-max" type="button" id="winMax" tabindex="-1" aria-label="Maximise" data-tip="Maximise">${glyph('M6 3v6M3 6h6')}</button>
       </div>
       <p class="tb-title" data-tauri-drag-region>Jot</p>
     </header>`)
