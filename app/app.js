@@ -103,6 +103,7 @@ function openLatest() {
 
 /* ---------- look ---------- */
 
+let windowTheme
 function applyLook() {
   const theme = prefs.get('theme', 'system')
   if (theme === 'light' || theme === 'dark') root.dataset.theme = theme
@@ -111,6 +112,9 @@ function applyLook() {
   root.dataset.size = prefs.get('size', 'm')
   const dark = theme === 'dark' || (theme === 'system' && matchMedia('(prefers-color-scheme: dark)').matches)
   for (const m of $$('meta[name="theme-color"]')) m.content = dark ? '#151412' : '#f1ece2'
+  // The native window and the web view's own menus (spelling, copy and paste) follow Jot's theme
+  const bar = theme === 'system' ? null : theme
+  if (NATIVE && T.window && bar !== windowTheme) { windowTheme = bar; T.window.getCurrentWindow().setTheme(bar).catch(() => {}) }
 }
 matchMedia('(prefers-color-scheme: dark)').addEventListener('change', applyLook)
 
@@ -806,7 +810,9 @@ const stamp = () => new Date().toISOString().slice(0, 10)
 // A browser downloads the file; the native app asks where to save it (web views there cannot download)
 async function download(name, text, type) {
   if (NATIVE) {
-    const path = await T.dialog.save({ defaultPath: name, filters: [{ name: 'Jot export', extensions: ['json'] }] })
+    // Start in Downloads, as a browser would, rather than wherever Windows last looked (at first, Jot's own folder)
+    const where = await T.path.downloadDir().then(d => T.path.join(d, name)).catch(() => name)
+    const path = await T.dialog.save({ defaultPath: where, filters: [{ name: 'Jot export', extensions: ['json'] }] })
     if (!path) return false
     await T.fs.writeTextFile(path, text)
     return true
@@ -1051,6 +1057,30 @@ function openKeys() {
   $('#shortcuts').showModal()
 }
 $('#keysBtn').addEventListener('click', openKeys)
+
+/* ---------- desktop title bar ---------- */
+
+// The Windows and Linux app draw their own title bar: three quiet dots, as on a Mac, that close,
+// minimise and maximise (for the mouse; the keyboard has Alt F4 and the Windows keys). The website and Android have no title bar of their own.
+const DESKTOP = NATIVE && !/Android/i.test(navigator.userAgent)
+if (DESKTOP) {
+  root.classList.add('desktop')
+  const win = T.window.getCurrentWindow()
+  const glyph = d => `<svg viewBox="0 0 12 12" aria-hidden="true"><path d="${d}"/></svg>`
+  body.insertAdjacentHTML('afterbegin', `
+    <header class="titlebar" data-tauri-drag-region>
+      <div class="tb-dots">
+        <button class="tb-dot tb-close" type="button" id="winClose" tabindex="-1" aria-label="Close">${glyph('M3.5 3.5l5 5M8.5 3.5l-5 5')}</button>
+        <button class="tb-dot tb-min" type="button" id="winMin" tabindex="-1" aria-label="Minimise">${glyph('M3 6h6')}</button>
+        <button class="tb-dot tb-max" type="button" id="winMax" tabindex="-1" aria-label="Maximise">${glyph('M6 3v6M3 6h6')}</button>
+      </div>
+      <p class="tb-title" data-tauri-drag-region>Jot</p>
+    </header>`)
+  // Whatever is being typed is saved before the window goes
+  $('#winClose').addEventListener('click', async () => { commitEdit(); await flushAll().catch(() => {}); win.close().catch(() => {}) })
+  $('#winMin').addEventListener('click', () => win.minimize().catch(() => {}))
+  $('#winMax').addEventListener('click', () => win.toggleMaximize().catch(() => {}))
+}
 addEventListener('keydown', e => {
   if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') { e.preventDefault(); editDirty = true; commitEdit(); return }
   if (e.defaultPrevented || e.ctrlKey || e.metaKey || e.altKey) return
