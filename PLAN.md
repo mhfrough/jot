@@ -20,7 +20,7 @@ today, wrapped by Tauri 2 for Windows, Linux, Android and iOS next.
 | Accounts | None. No sign-in, no passphrase: the app opens on the list |
 | Storage | IndexedDB in the browser, asks for persistent storage; export to one JSON file |
 | Type | JetBrains Mono for everything; a sans option for note text only |
-| Colour | Paper `#f1ece2` and ink `#1f1d1a`; carbon `#151412` at night. One signal: Swiss poster orange `#ff5000` (Pantone Orange 021), never for body text; `#c43e00` where it is text |
+| Colour | Paper `#f1ece2` and ink `#1f1d1a`; carbon `#151412` at night. One signal: ochre `#b07d00` (`#e0aa2a` at night) for marks and shapes; `#8a5f00` where it sets text, for 4.8:1 contrast. Chosen to stand apart from Swoop's orange and Claude's clay |
 | App layout | Phone: list, then the note over it. Wide: list and note side by side, the note on a centred 42 rem column |
 | Dates | Created and updated on every note, always both, as "Today, 14:05" or "24 Oct, 14:05" |
 | Website | A visible 12-column grid (hairlines in the gutters), numbered sections, poster geometry built on the same modules: circles, squares, quarter circles, halftone dots, hatching |

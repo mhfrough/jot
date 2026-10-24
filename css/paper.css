@@ -1,5 +1,5 @@
 /* Jot paper: the shared font and colours for the app and the website.
-   Light is warm paper; dark is carbon paper. One signal colour: Swiss poster orange (Pantone Orange 021), used for marks, never for body text. */
+   Light is warm paper; dark is carbon paper. One signal colour: ochre, for marks and shapes; a darker ochre where it sets text. */
 
 @font-face {
   font-family: "JetBrains Mono";
@@ -19,8 +19,8 @@
   --rule-2: #c7bdab;
   --hover: #e9e2d4;
   --select: #e3dacb;
-  --signal: #ff5000;
-  --signal-ink: #c43e00;
+  --signal: #b07d00;
+  --signal-ink: #8a5f00;
   --mark: #e2d6bf;
   --shadow: 0 1px 0 rgb(60 45 20 / 0.04), 0 18px 40px -12px rgb(60 45 20 / 0.22);
   --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .2 0 0 0 0 .15 0 0 0 0 .08 0 0 0 .5 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
@@ -43,8 +43,8 @@
     --rule-2: #3b3833;
     --hover: #1f1d1a;
     --select: #272420;
-    --signal: #ff6a1f;
-    --signal-ink: #ff8a4c;
+    --signal: #e0aa2a;
+    --signal-ink: #e0aa2a;
     --mark: #45403a;
     --shadow: 0 1px 0 rgb(0 0 0 / 0.3), 0 20px 44px -12px rgb(0 0 0 / 0.7);
     --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 .95 0 0 0 0 .88 0 0 0 .5 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
@@ -62,8 +62,8 @@
   --rule-2: #3b3833;
   --hover: #1f1d1a;
   --select: #272420;
-  --signal: #ff6a1f;
-  --signal-ink: #ff8a4c;
+  --signal: #e0aa2a;
+  --signal-ink: #e0aa2a;
   --mark: #45403a;
   --shadow: 0 1px 0 rgb(0 0 0 / 0.3), 0 20px 44px -12px rgb(0 0 0 / 0.7);
   --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 .95 0 0 0 0 .88 0 0 0 .5 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");

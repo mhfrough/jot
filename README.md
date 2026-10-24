@@ -74,7 +74,7 @@ npm test
 | `app/index.html`, `app/app.js` | The app: list, editor, settings, export and import |
 | `app/db.js` | IndexedDB storage |
 | `app/sw.js`, `app/manifest.webmanifest` | Offline cache and install |
-| `css/paper.css` | The shared font and colours: paper, ink, one orange signal |
+| `css/paper.css` | The shared font and colours: paper, ink, one ochre signal |
 | `css/app.css`, `css/site.css` | The app and the website, plain CSS with no build step |
 | `index.html`, `js/site.js` | The website |
 | `privacy/`, `terms/`, `cookies/`, `credits/`, `sitemap/` | Inner pages, built by `tools/pages.py` |
