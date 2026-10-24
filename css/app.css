@@ -261,6 +261,14 @@ body.reading .desk { display: grid; animation: slide 0.28s var(--ease); }
 .fmt .f-c { font-size: 11.5px; letter-spacing: -0.05em; }
 .editor.ro .fmt { display: none; }
 @media (max-width: 899px) { .ed-state { display: none; } .fmt { margin-left: 0; border-left: 0; } }
+/* Small phones (360 px, like the Realme C25s): every editor tool still fits on one row */
+@media (max-width: 420px) {
+  .ed-bar { gap: 0; padding-inline: 4px; }
+  .ed-bar .icon-btn { width: 34px; }
+  .ed-tools { gap: 0; }
+  .fmt { gap: 0; padding-left: 0; }
+  .fmt .icon-btn { width: 30px; }
+}
 .ed-title::placeholder { color: var(--ink-3); opacity: 1; }
 .ed-title[readonly] { color: var(--ink-2); cursor: default; }
 
@@ -336,6 +344,8 @@ body.reading .desk { display: grid; animation: slide 0.28s var(--ease); }
 
 .toast {
   position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom)); z-index: 60;
+  /* left: 50% alone would leave it half the screen to wrap in, so it sizes to its text instead */
+  width: max-content; max-width: calc(100vw - 32px);
   display: flex; align-items: center; gap: 18px; padding: 10px 10px 10px 16px; min-height: 44px;
   background: var(--ink); color: var(--paper); border-radius: 0; box-shadow: var(--shadow);
   font-size: 12.5px; font-weight: 600;

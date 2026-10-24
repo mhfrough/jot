@@ -398,6 +398,18 @@ await test('Phone: no sideways scroll, editor over the list, back closes it', as
   await ctx.close()
 })
 
+await test('Small phone (360 px): every editor tool fits, the toast keeps one line', async () => {
+  const { ctx, page } = await fresh({ viewport: { width: 360, height: 760 }, isMobile: true, hasTouch: true })
+  await page.click('#fab'); await page.fill('#edTitle', 'Narrow')
+  await sleep(450)   // the editor slides in; measure once it has landed
+  const fit = await page.evaluate(() => { const bar = document.querySelector('.ed-bar'); const btns = [...bar.querySelectorAll('button')].filter(b => b.offsetParent); return bar.scrollWidth <= innerWidth && btns.every(b => b.getBoundingClientRect().right <= innerWidth) })
+  check(fit, 'editor tools run off the screen')
+  await page.click('#pinBtn'); await sleep(300)
+  const t = await page.evaluate(() => { const r = document.querySelector('#toast').getBoundingClientRect(); return { h: r.height, left: r.left, right: innerWidth - r.right } })
+  check(t.h < 56 && t.left >= 8 && t.right >= 8, `toast squeezed or off screen: ${JSON.stringify(t)}`)
+  await ctx.close()
+})
+
 await test('Offline: the service worker serves the app with the network off', async () => {
   const { ctx, page } = await fresh()
   await write(page, 'Offline note', 'still here')

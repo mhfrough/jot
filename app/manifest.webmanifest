@@ -1,11 +1,14 @@
 {
   "name": "Jot",
   "short_name": "Jot",
-  "description": "Plain notes that stay on your device.",
+  "description": "Plain notes that stay on your device. No sign-in, no server, works offline, with a password-locked tab.",
+  "lang": "en",
+  "dir": "ltr",
   "id": "./",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
+  "launch_handler": { "client_mode": "focus-existing" },
   "orientation": "any",
   "background_color": "#f1ece2",
   "theme_color": "#f1ece2",
@@ -13,7 +16,15 @@
   "icons": [
     { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
     { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
-    { "src": "icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    { "src": "icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "../icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ],
+  "screenshots": [
+    { "src": "../assets/img/phone-list-light-780.webp", "sizes": "780x1688", "type": "image/webp", "form_factor": "narrow", "label": "The notes list, with a pinned note at the top" },
+    { "src": "../assets/img/phone-note-dark-780.webp", "sizes": "780x1688", "type": "image/webp", "form_factor": "narrow", "label": "A checklist note in dark mode, with its created and updated dates" },
+    { "src": "../assets/img/phone-list-dark-780.webp", "sizes": "780x1688", "type": "image/webp", "form_factor": "narrow", "label": "The notes list in dark mode" },
+    { "src": "../assets/img/desk-light-1440.webp", "sizes": "1440x900", "type": "image/webp", "form_factor": "wide", "label": "Jot on a laptop: the list and a note side by side" },
+    { "src": "../assets/img/desk-dark-1440.webp", "sizes": "1440x900", "type": "image/webp", "form_factor": "wide", "label": "Jot on a laptop in dark mode" }
   ],
   "shortcuts": [
     { "name": "New note", "url": "./#new", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }] }

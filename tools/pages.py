@@ -265,6 +265,14 @@ page('design', 'P0', 'Design: the Jot design system, paper, ink and a grid',
 page('changelog', 'P6', 'Changelog: every version of Jot',
      'What changed in each version of Jot, newest first.',
      'Changelog', """        <article class="ver">
+          <h2>1.2.1 <span class="updated">24 October 2026</span></h2>
+          <ul>
+            <li>The toast sizes to its text instead of wrapping into a narrow column.</li>
+            <li>On small phones (360 px, like the Realme C25s) every editor tool fits on one row.</li>
+            <li>The install sheet shows screenshots, a description and the new-note shortcut.</li>
+          </ul>
+        </article>
+        <article class="ver">
           <h2>1.2.0 <span class="updated">24 October 2026</span></h2>
           <ul>
             <li>Formatting now shows as formatting: bold is bold, with no marks on screen. Notes are still stored as plain text.</li>
