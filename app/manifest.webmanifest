@@ -1,0 +1,21 @@
+{
+  "name": "Jot",
+  "short_name": "Jot",
+  "description": "Plain notes that stay on your device.",
+  "id": "./",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#f1ece2",
+  "theme_color": "#f1ece2",
+  "categories": ["productivity", "utilities"],
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "New note", "url": "./#new", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }] }
+  ]
+}

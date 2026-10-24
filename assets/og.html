@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<title>Jot social card</title>
+<meta name="robots" content="noindex">
+<link rel="stylesheet" href="../css/paper.css">
+<style>
+  html, body { margin: 0; width: 1200px; height: 630px; overflow: hidden; background: var(--paper); color: var(--ink); font-family: var(--mono); }
+  body::after { content: ""; position: fixed; inset: 0; background-image: var(--grain); opacity: var(--grain-o); }
+  .card { position: relative; height: 100%; display: grid; grid-template-columns: 640px 1fr; }
+  .lines { position: absolute; inset: 0 60px; border-inline: 1px solid var(--rule); background: linear-gradient(to right, var(--rule) 1px, transparent 1px) 0 0 / calc(100% / 12) 100%; opacity: .7; }
+  .copy { position: relative; padding: 70px 0 0 60px; display: grid; align-content: start; gap: 26px; }
+  .word { font-size: 34px; font-weight: 800; letter-spacing: -0.05em; display: flex; align-items: baseline; gap: 3px; }
+  .word i { width: 17px; height: 6px; background: var(--ink); display: inline-block; }
+  h1 { margin: 60px 0 0; font-size: 74px; line-height: .95; letter-spacing: -0.065em; font-weight: 800; }
+  p { margin: 0; font-size: 21px; color: var(--ink-2); }
+  .art { position: relative; }
+  svg { position: absolute; left: 0; top: 0; width: 560px; height: 630px; }
+  .device { position: absolute; left: 150px; top: 62px; width: 270px; padding: 7px; background: var(--ink); border-radius: 32px; box-shadow: 0 30px 60px -20px rgb(30 20 5 / .45); }
+  .device img { display: block; width: 100%; border-radius: 25px; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="lines"></div>
+  <div class="copy">
+    <div class="word">jot<i></i></div>
+    <h1>Plain notes.<br>Nothing else.</h1>
+    <p>No sign-in · no server · works offline</p>
+  </div>
+  <div class="art">
+    <svg viewBox="0 0 560 630">
+      <defs>
+        <pattern id="d" width="12" height="12" patternUnits="userSpaceOnUse"><circle cx="6" cy="6" r="2.6" fill="#1f1d1a"/></pattern>
+        <pattern id="h" width="9" height="9" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="3" height="9" fill="#1f1d1a"/></pattern>
+      </defs>
+      <circle cx="380" cy="190" r="190" fill="#ff5000"/>
+      <rect x="470" y="0" width="90" height="90" fill="url(#d)"/>
+      <circle cx="90" cy="110" r="90" fill="none" stroke="#1f1d1a" stroke-width="2"/>
+      <rect x="0" y="380" width="190" height="190" fill="#1f1d1a"/>
+      <path d="M560 630H370A190 190 0 0 1 560 440Z" fill="#1f1d1a"/>
+      <path d="M0 630V570A60 60 0 0 1 60 630Z" fill="url(#h)"/>
+    </svg>
+    <div class="device"><img src="img/phone-list-light-780.webp" alt=""></div>
+  </div>
+</div>
+</body>
+</html>

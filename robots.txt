@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+Disallow: /assets/og.html
+
+Sitemap: https://mhfrough.github.io/jot/sitemap.xml

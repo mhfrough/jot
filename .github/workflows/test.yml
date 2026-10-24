@@ -1,0 +1,26 @@
+# Playwright tests in real Chrome: the app and the website, served as plain files.
+name: Test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Serve the folder
+        run: |
+          python3 -m http.server 8190 >/dev/null 2>&1 &
+          for i in $(seq 1 20); do curl -fs http://localhost:8190/ >/dev/null && break; sleep 0.5; done
+      - run: npm test

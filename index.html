@@ -1,0 +1,281 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Jot: plain notes that stay on your device</title>
+  <meta name="description" content="Jot is a free, plain notes app for Android and the web. No sign-in, no server, no tracking. Notes stay on your device, open offline, and show when they were created and last updated.">
+  <meta name="author" content="Mohammad Hamza">
+  <meta name="robots" content="index, follow, max-image-preview:large">
+  <link rel="canonical" href="https://mhfrough.github.io/jot/">
+  <meta name="theme-color" content="#f1ece2" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#151412" media="(prefers-color-scheme: dark)">
+  <meta name="color-scheme" content="light dark">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <link rel="manifest" href="app/manifest.webmanifest">
+  <meta property="og:type" content="website">
+  <meta property="og:locale" content="en_GB">
+  <meta property="og:site_name" content="Jot">
+  <meta property="og:title" content="Jot: plain notes. Nothing else.">
+  <meta property="og:description" content="A free notes app for Android and the web. No sign-in, no server. Your notes stay on your device.">
+  <meta property="og:url" content="https://mhfrough.github.io/jot/">
+  <meta property="og:image" content="https://mhfrough.github.io/jot/assets/og-image.jpg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Jot: plain notes, nothing else. The notes list on a phone over a grid of circles and squares.">
+  <meta name="twitter:card" content="summary_large_image">
+  <script>try{var t=localStorage.getItem('jot.theme');if(t==='light'||t==='dark')document.documentElement.dataset.theme=t}catch(e){}</script>
+  <link rel="preload" href="fonts/JetBrainsMono.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="css/paper.css">
+  <link rel="stylesheet" href="css/site.css">
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    { "@type": "WebSite", "@id": "https://mhfrough.github.io/jot/#website", "url": "https://mhfrough.github.io/jot/", "name": "Jot", "inLanguage": "en" },
+    { "@type": "Person", "@id": "https://mhfrough.github.io/jot/#author", "name": "Mohammad Hamza", "url": "https://github.com/mhfrough" },
+    {
+      "@type": "SoftwareApplication", "name": "Jot", "applicationCategory": "ProductivityApplication", "applicationSubCategory": "Notes",
+      "operatingSystem": "Android, Windows, macOS, Linux, ChromeOS (in the browser)", "url": "https://mhfrough.github.io/jot/app/",
+      "description": "Plain notes kept on your device: no sign-in, no server, works offline, with pins, search, checklists, archive and trash, and created and updated dates on every note.",
+      "isAccessibleForFree": true, "license": "https://opensource.org/licenses/MIT",
+      "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }, "author": { "@id": "https://mhfrough.github.io/jot/#author" }
+    }
+  ]
+}
+  </script>
+  <script defer src="js/site.js"></script>
+</head>
+<body>
+  <svg xmlns="http://www.w3.org/2000/svg" style="display:none">
+    <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M4 12h15M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="square"/></symbol>
+    <symbol id="i-github" viewBox="0 0 256 256"><path d="M208.31,75.68A59.78,59.78,0,0,0,202.93,28,8,8,0,0,0,196,24a59.75,59.75,0,0,0-48,24H124A59.75,59.75,0,0,0,76,24a8,8,0,0,0-6.93,4,59.78,59.78,0,0,0-5.38,47.68A58.14,58.14,0,0,0,56,104v8a56.06,56.06,0,0,0,48.44,55.47A39.8,39.8,0,0,0,96,192v8H72a24,24,0,0,1-24-24A40,40,0,0,0,8,136a8,8,0,0,0,0,16,24,24,0,0,1,24,24,40,40,0,0,0,40,40H96v16a8,8,0,0,0,16,0V192a24,24,0,0,1,48,0v40a8,8,0,0,0,16,0V192a39.8,39.8,0,0,0-8.44-24.53A56.06,56.06,0,0,0,216,112v-8A58.14,58.14,0,0,0,208.31,75.68ZM200,112a40,40,0,0,1-40,40H112a40,40,0,0,1-40-40v-8a41.74,41.74,0,0,1,6.9-22.48A8,8,0,0,0,80,73.83a43.81,43.81,0,0,1,.79-33.58,43.88,43.88,0,0,1,32.32,20.06A8,8,0,0,0,119.82,64h32.35a8,8,0,0,0,6.74-3.69,43.87,43.87,0,0,1,32.32-20.06A43.81,43.81,0,0,1,192,73.83a8.09,8.09,0,0,0,1,7.65A41.72,41.72,0,0,1,200,104Z"/></symbol>
+    <symbol id="i-theme" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M12 4a8 8 0 0 1 0 16z" fill="currentColor"/></symbol>
+    <symbol id="i-menu" viewBox="0 0 24 24"><path d="M3 7h18M3 12h18M3 17h18" stroke="currentColor" stroke-width="1.6"/></symbol>
+  </svg>
+  <a class="skip" href="#main">Skip to the content</a>
+  <div class="gridlines" aria-hidden="true"></div>
+
+  <header class="top">
+    <div class="wrap top-in">
+      <a class="word" href="./" aria-label="Jot, home"><span>jot</span><i class="caret" aria-hidden="true"></i></a>
+      <nav class="nav" id="nav" aria-label="Main">
+        <a href="#features"><span>01</span>Features</a>
+        <a href="#local"><span>02</span>On your device</a>
+        <a href="#move"><span>03</span>Move in</a>
+        <a href="#faq"><span>04</span>Questions</a>
+      </nav>
+      <div class="top-act">
+        <a class="star" href="https://github.com/mhfrough/jot" data-stars="mhfrough/jot"><svg aria-hidden="true"><use href="#i-github"/></svg><span class="star-label">Star</span><span class="sr-only"> Jot on GitHub</span><span class="sr-only star-sr"></span><span class="star-n" aria-hidden="true"></span></a>
+        <button class="sq-btn" type="button" data-theme-toggle aria-label="Theme: same as the device"><svg aria-hidden="true"><use href="#i-theme"/></svg></button>
+        <a class="btn ink" href="app/"><span>Open Jot</span><svg aria-hidden="true"><use href="#i-arrow"/></svg></a>
+        <button class="sq-btn menu" type="button" aria-expanded="false" aria-controls="nav" aria-label="Menu"><svg aria-hidden="true"><use href="#i-menu"/></svg></button>
+      </div>
+    </div>
+  </header>
+
+  <main id="main" tabindex="-1">
+
+    <section class="hero wrap grid" aria-labelledby="hero-title">
+      <p class="kicker c-copy"><span class="dot"></span>A notes app for Android and the web</p>
+      <h1 id="hero-title" class="c-copy">Plain notes.<br>Nothing else.</h1>
+      <p class="lede c-copy">Jot is a quiet place to write things down. No sign-in, no server, no tracking. Notes stay on your device, open offline, and show when each one was created and last updated.</p>
+      <div class="hero-act c-copy">
+        <a class="btn ink big" href="app/"><span>Open Jot</span><svg aria-hidden="true"><use href="#i-arrow"/></svg></a>
+        <a class="btn line big" href="#install"><span>Install on Android</span></a>
+      </div>
+      <dl class="tally c-copy">
+        <div><dt>Accounts</dt><dd>0</dd></div>
+        <div><dt>Servers</dt><dd>0</dd></div>
+        <div><dt>Trackers</dt><dd>0</dd></div>
+        <div><dt>Price</dt><dd>£0</dd></div>
+      </dl>
+
+      <figure class="poster c-art" aria-label="The Jot notes list on a phone">
+        <svg class="poster-geo" viewBox="0 0 600 700" aria-hidden="true">
+          <defs>
+            <pattern id="dots" width="12" height="12" patternUnits="userSpaceOnUse"><circle class="p-ink" cx="6" cy="6" r="2.6"/></pattern>
+            <pattern id="hatch" width="9" height="9" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect class="p-ink" width="3" height="9"/></pattern>
+          </defs>
+          <g class="g-lines">
+            <path d="M100 0V700M200 0V700M300 0V700M400 0V700M500 0V700M0 100H600M0 200H600M0 300H600M0 400H600M0 500H600M0 600H600"/>
+          </g>
+          <circle class="g-sun" cx="400" cy="200" r="200"/>
+          <rect class="g-ink" x="0" y="400" width="200" height="200"/>
+          <path class="g-quarter" d="M600 700H400A200 200 0 0 1 600 500Z"/>
+          <circle class="g-ring" cx="100" cy="100" r="100"/>
+          <rect class="g-dot" x="500" y="0" width="100" height="100"/>
+          <path class="g-half" d="M0 700V600A100 100 0 0 1 100 700Z"/>
+        </svg>
+        <div class="device">
+          <img src="assets/img/phone-list-light-780.webp" srcset="assets/img/phone-list-light-390.webp 390w, assets/img/phone-list-light-780.webp 780w" sizes="(max-width: 900px) 46vw, 300px" width="780" height="1688" alt="Jot on a phone: a list of notes with Groceries pinned at the top, then Car service, Books to read, Gift ideas and Trip packing" fetchpriority="high" class="for-light">
+          <img src="assets/img/phone-list-dark-780.webp" srcset="assets/img/phone-list-dark-390.webp 390w, assets/img/phone-list-dark-780.webp 780w" sizes="(max-width: 900px) 46vw, 300px" width="780" height="1688" alt="" aria-hidden="true" loading="lazy" class="for-dark">
+        </div>
+        <figcaption class="fig">Fig. 1 · The list, on an Android phone</figcaption>
+      </figure>
+    </section>
+
+    <div class="wrap" aria-hidden="true"><div class="marquee">
+      <p>Write <i>■</i> Pin <i>●</i> Search <i>▲</i> Tick <i>■</i> Archive <i>●</i> Export <i>▲</i> Offline <i>■</i> Write <i>●</i> Pin <i>▲</i> Search <i>■</i> Tick <i>●</i> Archive <i>▲</i> Export <i>■</i> Offline</p>
+    </div></div>
+
+    <section class="sec wrap" id="features" aria-labelledby="features-title">
+      <header class="sec-head grid">
+        <p class="sec-no">01</p>
+        <p class="sec-label">Features</p>
+        <h2 id="features-title">Everything you need to write things down. Nothing you do not.</h2>
+      </header>
+      <ul class="cells" role="list">
+        <li class="cell" data-reveal>
+          <svg class="glyph" viewBox="0 0 48 48" aria-hidden="true"><rect class="gi" x="4" y="4" width="40" height="40"/><rect class="gs" x="12" y="30" width="20" height="4"/></svg>
+          <h3>Saves as you type</h3><p>No save button. Every keystroke is kept, even if you close the tab.</p>
+        </li>
+        <li class="cell" data-reveal>
+          <svg class="glyph" viewBox="0 0 48 48" aria-hidden="true"><rect class="gl" x="4" y="4" width="40" height="40"/><path class="gs" d="M4 24h40v20H4z"/><circle class="gi" cx="24" cy="14" r="6"/></svg>
+          <h3>Created and updated</h3><p>Every note shows the day and time it was made and last changed.</p>
+        </li>
+        <li class="cell" data-reveal>
+          <svg class="glyph" viewBox="0 0 48 48" aria-hidden="true"><circle class="gl" cx="20" cy="20" r="14"/><path class="gi" d="M30 30l14 14-4 4-14-14z"/></svg>
+          <h3>Search everything</h3><p>Titles and text, as you type, with every match marked.</p>
+        </li>
+        <li class="cell" data-reveal>
+          <svg class="glyph" viewBox="0 0 48 48" aria-hidden="true"><rect class="gs" x="4" y="4" width="18" height="18"/><rect class="gl" x="26" y="4" width="18" height="18"/><rect class="gl" x="4" y="26" width="18" height="18"/><rect class="gl" x="26" y="26" width="18" height="18"/></svg>
+          <h3>Pin to the top</h3><p>The notes you need most stay above the rest.</p>
+        </li>
+        <li class="cell" data-reveal>
+          <svg class="glyph" viewBox="0 0 48 48" aria-hidden="true"><rect class="gl" x="4" y="6" width="12" height="12"/><path class="gi" d="M6 36l4 4 8-10"/><rect class="gl" x="4" y="28" width="12" height="12"/><rect class="gi" x="22" y="10" width="22" height="4"/><rect class="gs" x="22" y="32" width="22" height="4"/></svg>
+          <h3>Checklists in plain text</h3><p>Start a line with [ ] and tap the box to tick it. Lists carry on when you press Enter.</p>
+        </li>
+        <li class="cell" data-reveal>
+          <svg class="glyph" viewBox="0 0 48 48" aria-hidden="true"><path class="gi" d="M4 44V24A20 20 0 0 1 24 4V44z"/><path class="gs" d="M24 44V24h20v20z"/></svg>
+          <h3>Archive and trash</h3><p>Put notes away or delete them, with an undo. The trash empties itself after 30 days.</p>
+        </li>
+        <li class="cell" data-reveal>
+          <svg class="glyph" viewBox="0 0 48 48" aria-hidden="true"><rect class="gi" x="4" y="4" width="20" height="40"/><rect class="gl" x="24" y="4" width="20" height="40"/><circle class="gs" cx="24" cy="24" r="6"/></svg>
+          <h3>Paper, light or dark</h3><p>Warm paper by day, carbon by night. It follows your phone, or pick one.</p>
+        </li>
+        <li class="cell" data-reveal>
+          <svg class="glyph" viewBox="0 0 48 48" aria-hidden="true"><text class="gt" x="2" y="34">Aa</text><rect class="gs" x="38" y="26" width="8" height="8"/></svg>
+          <h3>Mono, or sans</h3><p>A typewriter feel in JetBrains Mono, or a plain sans. Three text sizes.</p>
+        </li>
+        <li class="cell" data-reveal>
+          <svg class="glyph" viewBox="0 0 48 48" aria-hidden="true"><circle class="gl" cx="24" cy="24" r="20"/><path class="gs" d="M24 4a20 20 0 0 1 0 40z"/><rect class="gi" x="21" y="12" width="6" height="14"/></svg>
+          <h3>Works offline</h3><p>Install it from the browser. It opens in a blink, with or without a network.</p>
+        </li>
+      </ul>
+    </section>
+
+    <section class="sec wrap" id="local" aria-labelledby="local-title">
+      <header class="sec-head grid">
+        <p class="sec-no">02</p>
+        <p class="sec-label">On your device</p>
+        <h2 id="local-title">There is no Jot server. There is nowhere for your notes to go.</h2>
+      </header>
+      <div class="grid local">
+        <div class="local-copy">
+          <p>Jot is a set of files that runs in your browser. Notes are saved in the browser's own storage on your phone or computer, and nowhere else. No account to make, no password to forget, nothing to sync.</p>
+          <p>That also means the notes on your phone are not on your laptop. If you want them in two places, export a file and import it on the other device.</p>
+          <p class="note"><b>One thing to know.</b> Clearing the browser's data for this site deletes the notes in it. Jot asks the browser to keep them, and you can export a copy from Settings at any time.</p>
+        </div>
+        <figure class="diagram" aria-label="A diagram: notes stay inside the device; the path to a server is crossed out">
+          <svg viewBox="0 0 520 360" aria-hidden="true">
+            <g class="d-lines"><path d="M0 60H520M0 300H520M60 0V360M460 0V360"/></g>
+            <rect class="d-dev" x="60" y="60" width="200" height="240" rx="18"/>
+            <rect class="d-note" x="96" y="104" width="128" height="20"/>
+            <rect class="d-note2" x="96" y="140" width="96" height="12"/>
+            <rect class="d-note2" x="96" y="164" width="116" height="12"/>
+            <rect class="d-note2" x="96" y="188" width="72" height="12"/>
+            <circle class="d-store" cx="160" cy="252" r="22"/>
+            <path class="d-path" d="M260 180H380"/>
+            <circle class="d-cloud" cx="420" cy="180" r="40"/>
+            <path class="d-cross" d="M300 140l80 80M380 140l-80 80"/>
+            <text class="d-txt" x="60" y="40">your device</text>
+            <text class="d-txt" x="380" y="250">a server</text>
+            <text class="d-txt s" x="196" y="257">notes</text>
+          </svg>
+          <figcaption class="fig">Fig. 2 · Where your notes live</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section class="sec wrap" id="screens" aria-label="Screens">
+      <div class="grid shots">
+        <figure class="shot wide" data-reveal>
+          <img src="assets/img/desk-light-1440.webp" srcset="assets/img/desk-light-800.webp 800w, assets/img/desk-light-1440.webp 1440w" sizes="(max-width: 900px) 92vw, 840px" width="1440" height="900" alt="Jot on a laptop: the list of notes on the left and the Car service note open on the right, with its created and updated dates" loading="lazy" decoding="async" class="for-light">
+          <img src="assets/img/desk-dark-1440.webp" srcset="assets/img/desk-dark-800.webp 800w, assets/img/desk-dark-1440.webp 1440w" sizes="(max-width: 900px) 92vw, 840px" width="1440" height="900" alt="" aria-hidden="true" loading="lazy" decoding="async" class="for-dark">
+          <figcaption class="fig">Fig. 3 · On a laptop, list and note side by side</figcaption>
+        </figure>
+        <figure class="shot tall" data-reveal>
+          <img src="assets/img/phone-note-dark-780.webp" srcset="assets/img/phone-note-dark-390.webp 390w, assets/img/phone-note-dark-780.webp 780w" sizes="(max-width: 900px) 46vw, 280px" width="780" height="1688" alt="A Groceries checklist in Jot, in dark mode, with its created and updated dates above the title" loading="lazy" decoding="async">
+          <figcaption class="fig">Fig. 4 · A checklist, in carbon</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section class="sec wrap" id="move" aria-labelledby="move-title">
+      <header class="sec-head grid">
+        <p class="sec-no">03</p>
+        <p class="sec-label">Move in</p>
+        <h2 id="move-title">Leaving Simple Notes takes about a minute.</h2>
+      </header>
+      <ol class="steps" role="list">
+        <li class="step" data-reveal><p class="step-n">A</p><h3>Export</h3><p>In Simple Notes or Fossify Notes, open <b>Settings</b> and tap <b>Export notes</b>. Save the file.</p></li>
+        <li class="step" data-reveal><p class="step-n">B</p><h3>Import</h3><p>In Jot, open <b>Settings</b>, tap <b>Import</b> and pick that file. Checklists come over as <code>[ ]</code> and <code>[x]</code> lines.</p></li>
+        <li class="step" data-reveal><p class="step-n">C</p><h3>Tidy up</h3><p>Check your notes are there, then delete the export file. Plain text files import too, one note each.</p></li>
+      </ol>
+      <div class="grid install" id="install">
+        <h3 class="install-h">Install on Android</h3>
+        <p class="install-p">Open <a href="app/">mhfrough.github.io/jot/app</a> in Chrome, tap the menu <b>⋮</b> and choose <b>Install app</b>. Jot gets its own icon, opens full screen, and works offline from then on. On a computer, use the install button in the address bar.</p>
+        <a class="btn ink big install-b" href="app/"><span>Open Jot</span><svg aria-hidden="true"><use href="#i-arrow"/></svg></a>
+      </div>
+    </section>
+
+    <section class="sec wrap" id="faq" aria-labelledby="faq-title">
+      <header class="sec-head grid">
+        <p class="sec-no">04</p>
+        <p class="sec-label">Questions</p>
+        <h2 id="faq-title">Short answers.</h2>
+      </header>
+      <div class="grid">
+        <div class="faq">
+          <details><summary>Do I need an account?</summary><p>No. There is no sign-in and no account to make. Open the app and start writing.</p></details>
+          <details><summary>Where are my notes kept?</summary><p>In your browser's storage (IndexedDB) on the device you are using. They are never uploaded: Jot has no server to upload them to.</p></details>
+          <details><summary>Does it work without internet?</summary><p>Yes. After the first visit Jot keeps itself on the device and opens offline.</p></details>
+          <details><summary>How do I move notes to a new phone?</summary><p>On the old phone, open Settings and tap Export. Send yourself the file, then tap Import on the new phone.</p></details>
+          <details><summary>Can I get my notes out again?</summary><p>Always. Export gives you one plain JSON file with every note, its title, text and both dates.</p></details>
+          <details><summary>Is it really free?</summary><p>Yes, and open source under the MIT licence. No ads, no tracking, nothing to buy.</p></details>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <div class="wrap grid foot-in">
+      <div class="foot-col">
+        <p class="foot-h">Jot</p>
+        <a href="app/">Open the app</a>
+        <a href="https://github.com/mhfrough/jot">Source on GitHub</a>
+      </div>
+      <div class="foot-col">
+        <p class="foot-h">Pages</p>
+        <a href="privacy/">Privacy</a>
+        <a href="terms/">Terms</a>
+        <a href="cookies/">Cookies</a>
+        <a href="credits/">Credits</a>
+        <a href="sitemap/">Sitemap</a>
+      </div>
+      <div class="foot-col">
+        <p class="foot-h">More by the maker</p>
+        <a href="https://mhfrough.github.io/flick/">Flick, send files nearby</a>
+        <a href="https://mhfrough.github.io/pinch/">Pinch, shrink images</a>
+        <a href="https://mhfrough.github.io/scrawl/">Scrawl, a sketchbook</a>
+        <a href="https://mhfrough.github.io/sizzle/">Sizzle, promo reels by your AI agent</a>
+        <a href="https://mhfrough.github.io/swoop/">Swoop, screenshots</a>
+      </div>
+      <p class="foot-small">Made by <a href="https://github.com/mhfrough">Mohammad Hamza</a>. MIT licence.</p>
+      <p class="foot-word" aria-hidden="true">jot<i class="caret"></i></p>
+    </div>
+  </footer>
+</body>
+</html>
