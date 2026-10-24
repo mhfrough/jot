@@ -10,7 +10,6 @@
   --bar-h: 56px;
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
 }
-:root[data-font="sans"] { --note: var(--sans); }
 :root[data-size="s"] { --note-size: 14.5px; }
 :root[data-size="l"] { --note-size: 18.5px; }
 
@@ -78,7 +77,7 @@ mark { background: var(--mark); color: inherit; border-radius: 0; }
   }
 }
 .text-btn {
-  min-height: 32px; padding: 0 10px; border: 1px solid var(--rule-2); border-radius: 0;
+  white-space: nowrap; min-height: 32px; padding: 0 10px; border: 1px solid var(--rule-2); border-radius: 0;
   background: transparent; cursor: pointer; font-size: 12.5px; font-weight: 600;
 }
 .text-btn:hover { background: var(--hover); }
@@ -166,6 +165,24 @@ body.ready .shell { opacity: 1; }
   display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
 }
 
+/* The Locked tab's door: a padlock built from a square and an arc, then the password */
+.gate { display: grid; gap: 14px; max-width: 26rem; padding: 36px 20px; }
+.gate-art { width: 52px; height: 52px; margin-bottom: 4px; }
+.ga-body { fill: var(--ink); }
+.ga-arc { fill: none; stroke: var(--ink); stroke-width: 6; }
+.ga-key { fill: var(--signal); }
+.gate-title { font-size: 17px; font-weight: 800; letter-spacing: -0.02em; }
+.field { display: grid; gap: 6px; font-size: 12px; font-weight: 700; color: var(--ink-2); }
+.field input { height: 42px; padding: 0 12px; border: 1px solid var(--rule-2); background: var(--sheet); font: 400 14px var(--mono); color: var(--ink); outline: none; }
+.field input:focus { border-color: var(--ink); }
+.error { color: var(--signal-ink); font-size: 12.5px; font-weight: 700; }
+.gate .btn { justify-self: start; }
+.ask-fields { display: grid; gap: 12px; }
+.ask-fields:empty { display: none; }
+.tabs .tab-ico { width: 13px; height: 13px; }
+body.unlocked .tabs #tab-locked .tab-ico { color: var(--signal); }
+body[data-tab="locked"]:not(.unlocked) .fab, body[data-tab="locked"]:not(.unlocked) .new { visibility: hidden; }
+
 .list-tools { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 20px; border-bottom: 1px solid var(--rule); color: var(--ink-2); font-size: 12px; }
 .empty { padding: 48px 20px; display: grid; gap: 8px; }
 .empty-title { font-weight: 700; font-size: 15px; }
@@ -190,6 +207,7 @@ body.ready .shell { opacity: 1; }
 .fab .ico { width: 24px; height: 24px; }
 .fab:active { transform: scale(0.94); }
 body.reading .fab, body[data-tab="trash"] .fab, body[data-tab="archive"] .fab { display: none; }
+.tabs { gap: 18px; overflow-x: auto; scrollbar-width: none; }
 
 /* ---------- desk and editor ---------- */
 
@@ -223,13 +241,34 @@ body.reading .desk { display: grid; animation: slide 0.28s var(--ease); }
   overflow: hidden; margin-bottom: 14px;
   font: 750 calc(var(--note-size) * 1.5) / 1.25 var(--note); letter-spacing: -0.025em;
 }
-.ed-body {
-  min-height: 60vh; field-sizing: content;
-  font: 400 var(--note-size) / 1.75 var(--note); tab-size: 4;
+/* The note and its styled copy share every metric, so the copy sits exactly under the text */
+.ed-wrap { position: relative; }
+.ed-body, .ed-mirror {
+  margin: 0; padding: 0; border: 0;
+  font: 400 var(--note-size) / 1.75 var(--note); tab-size: 4; letter-spacing: 0;
+  white-space: pre-wrap; overflow-wrap: break-word; word-break: normal;
 }
+.ed-body { position: relative; min-height: 60vh; overflow: hidden; color: transparent; caret-color: var(--ink); }
+.ed-body::selection { color: transparent; }
+.ed-mirror { position: absolute; inset: 0; pointer-events: none; color: var(--ink); }
+.ed-mirror b { font-weight: 750; }
+.ed-mirror i { font-style: italic; }
+.ed-mirror s { text-decoration: line-through; text-decoration-thickness: 1.5px; }
+.ed-mirror code { background: var(--select); color: var(--ink); font: inherit; }
+.ed-mirror .mk { color: var(--ink-3); font-weight: 400; font-style: normal; }
+.ed-mirror .done { color: var(--ink-3); text-decoration: line-through; text-decoration-color: var(--rule-2); }
+.editor.ro .ed-mirror { color: var(--ink-2); }
+
+/* Format buttons: the letters themselves, styled as what they do */
+.fmt { display: flex; gap: 2px; margin-left: 8px; padding-left: 8px; border-left: 1px solid var(--rule); }
+.fmt .icon-btn { width: 34px; font: 700 14px/1 var(--mono); color: var(--ink-2); }
+.fmt .f-i { font-style: italic; font-weight: 500; }
+.fmt .f-s { text-decoration: line-through; font-weight: 500; }
+.fmt .f-c { font-size: 11.5px; letter-spacing: -0.05em; }
+.editor.ro .fmt { display: none; }
+@media (max-width: 899px) { .ed-state { display: none; } .fmt { margin-left: 0; border-left: 0; } }
 .ed-title::placeholder, .ed-body::placeholder { color: var(--ink-3); opacity: 1; }
 .ed-body[readonly], .ed-title[readonly] { color: var(--ink-2); cursor: default; }
-:root[data-font="sans"] .ed-body { line-height: 1.65; }
 
 .ed-foot {
   display: flex; justify-content: space-between; gap: 12px; min-height: 36px; align-items: center;

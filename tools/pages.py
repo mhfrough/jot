@@ -103,13 +103,15 @@ page('privacy', 'P1', 'Privacy: Jot keeps your notes on your device',
      'Privacy', f'''        {UPDATED}
         <p>Jot does not collect, send, sell or share your notes or anything about you. There is no Jot server, no account, no analytics and no advertising.</p>
         <h2>Your notes</h2>
-        <p>Notes are stored in your browser's own database (IndexedDB) on the device you use, and nowhere else. They are not encrypted by Jot: anyone who can use your unlocked device and browser can open them, just as they could open any other app. Use your phone's screen lock to keep them to yourself.</p>
+        <p>Notes are stored in your browser's own database (IndexedDB) on the device you use, and nowhere else. Notes in the main list are stored as plain text: anyone who can use your unlocked device and browser can open them, as with any other app.</p>
+        <h2>Locked notes</h2>
+        <p>Notes in the Locked tab are encrypted on the device with AES-256-GCM before they are stored. The key comes from your password through PBKDF2-SHA-256 with 600,000 rounds; the password itself is never stored or sent anywhere. Nobody, including the maker of Jot, can open them without it, and there is no way to reset it. In an export they stay encrypted.</p>
         <h2>Settings</h2>
-        <p>A few settings that hold nothing personal are kept in local storage: the theme, the note font, the text size and the sort order. The full list is on the <a href="../cookies/">cookies page</a>.</p>
+        <p>A few settings that hold nothing personal are kept in local storage: the theme, the text size, the sort order and how soon Locked closes. The full list is on the <a href="../cookies/">cookies page</a>.</p>
         <h2>Hosting</h2>
         <p>The website and app files are served by GitHub Pages. Like any web host, GitHub may log the IP address and browser of visitors. See the <a href="https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement">GitHub privacy statement</a>. After the first visit, the app runs from your device's own copy. The website (not the app) asks GitHub's public API for the star count of the Jot repository.</p>
         <h2>Exports</h2>
-        <p>An export is a plain JSON file saved where you choose. Anyone who gets the file can read it, so keep it somewhere safe.</p>
+        <p>An export is a JSON file saved where you choose. Your main notes are plain text in it, so anyone who gets the file can read those; locked notes stay encrypted. Keep it somewhere safe.</p>
         <h2>Changes and questions</h2>
         <p>Any change to this policy is published here and in the source history. Questions are welcome as an issue on <a href="https://github.com/mhfrough/jot/issues">GitHub</a>.</p>''')
 
@@ -121,6 +123,8 @@ page('terms', 'P2', 'Terms of use for Jot, the free notes app',
         <p>Jot is provided as is, without warranty of any kind. The maker is not liable for lost notes or any damage that comes from using it.</p>
         <h2>Your notes are yours to keep</h2>
         <p>Notes live only in your browser on your device. Clearing the browser's data for this site, or losing the device, deletes them. Export a copy from Settings now and then.</p>
+        <h2>The Locked password</h2>
+        <p>You are the only holder of the Locked password. If you forget it, the notes it protects cannot be opened by anyone, and the maker cannot help.</p>
         <h2>Changes</h2>
         <p>These terms may change with new versions of Jot. Changes are published here and in the source history.</p>''')
 
@@ -131,13 +135,13 @@ page('cookies', 'P3', 'Cookies: Jot sets none, here is what it stores',
         <h2>Local storage</h2>
         <ul>
           <li><code>jot.theme</code>: auto, light or dark.</li>
-          <li><code>jot.font</code>: mono or sans for notes.</li>
           <li><code>jot.size</code>: the note text size.</li>
           <li><code>jot.sort</code>: how the list is sorted.</li>
+          <li><code>jot.lockmin</code>: minutes without use before Locked closes.</li>
           <li><code>stars:mhfrough/jot</code>: the cached GitHub star count, on the website.</li>
         </ul>
         <h2>IndexedDB</h2>
-        <p>The database named <code>jot-notes</code> holds your notes: title, text, the created and updated times, and whether each is pinned, archived or in the trash.</p>
+        <p>The database named <code>jot-notes</code> holds your notes: title, text, the created and updated times, and whether each is pinned, archived or in the trash. Locked notes are kept apart in it, encrypted, with the header that opens them (a salt, a round count and an encrypted key).</p>
         <h2>App cache</h2>
         <p>The service worker keeps a copy of the app's own files so it opens offline. It holds no notes.</p>
         <h2>Removing it all</h2>
@@ -179,7 +183,7 @@ page('design', 'P0', 'Design: the Jot design system, paper, ink and a grid',
         <h2>1 · Principles</h2>
         <ol class="rules">
           <li><b>Words first.</b> The note is the largest thing on the screen. Tools stay small, grey and out of the way.</li>
-          <li><b>One face.</b> JetBrains Mono everywhere, so every character lines up like a typewriter page. Hierarchy comes from size, weight and capitals, never from a second font.</li>
+          <li><b>One face.</b> JetBrains Mono everywhere, so every character lines up like a typewriter page. Hierarchy comes from size, weight and capitals, never from a second font. Because every weight and slant has the same width, formatting can be drawn right under the text as you type.</li>
           <li><b>Square.</b> No rounded corners. The only curves are true circles and the phones in pictures.</li>
           <li><b>The grid shows.</b> Twelve columns, drawn as hairlines in the gutters. Text sits flush left on a column edge.</li>
           <li><b>One signal.</b> Ochre marks what matters now: the open tab, the open note, a pin, the caret. Never body text on paper.</li>
@@ -260,10 +264,18 @@ page('design', 'P0', 'Design: the Jot design system, paper, ink and a grid',
 page('changelog', 'P6', 'Changelog: every version of Jot',
      'What changed in each version of Jot, newest first.',
      'Changelog', """        <article class="ver">
-          <h2>1.1.0 <span class="tag">Next</span></h2>
+          <h2>1.2.0 <span class="tag">Next</span></h2>
           <ul>
-            <li>A locked tab: notes protected by a password and encrypted on the device.</li>
             <li>Desktop and Android apps built with Tauri, on GitHub releases.</li>
+          </ul>
+        </article>
+        <article class="ver">
+          <h2>1.1.0 <span class="updated">24 October 2026</span></h2>
+          <ul>
+            <li>Locked: a tab with its own password. Its notes are encrypted on the device (AES-256-GCM, PBKDF2 with 600,000 rounds), close after a few idle minutes or 30 seconds in the background, and stay encrypted in exports.</li>
+            <li>Formatting: bold, italic, strike and code, shown as you type, with Ctrl B, Ctrl I, Ctrl Shift X and Ctrl E.</li>
+            <li>Ticked checklist lines are struck through and faded.</li>
+            <li>Notes are mono only, so formatting always lines up with the text.</li>
           </ul>
         </article>
         <article class="ver">

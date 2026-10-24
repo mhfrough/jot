@@ -16,10 +16,12 @@ Jot replaces Simple Notes on an Android phone. It keeps what made that app good,
 | Dates | Created and updated, day and time, at the top of every note |
 | Search | Titles and text, as you type, with matches marked |
 | Pins | Pinned notes stay above the rest |
-| Checklists | Plain `[ ]` lines; tap the box to tick it; lists carry on when you press Enter |
+| Formatting | `**bold**`, `_italic_`, `~~strike~~` and `` `code` ``, shown as you type; Ctrl B, I, Shift X, E |
+| Checklists | Plain `[ ]` lines; tap the box to tick it; ticked lines fade; lists carry on when you press Enter |
+| Locked | A tab with its own password: notes encrypted on the device, closed after idle minutes or 30 s in the background |
 | Archive and trash | Put away or delete with an undo; the trash empties after 30 days |
-| Look | Paper (light) or carbon (dark), mono or sans, three text sizes, sort by updated, created or A–Z |
-| Export and import | One JSON file with everything; imports Simple Notes and Fossify Notes exports and `.txt` files |
+| Look | Paper (light) or carbon (dark), JetBrains Mono, three text sizes, sort by updated, created or A–Z |
+| Export and import | One JSON file with everything (locked notes stay encrypted); imports Simple Notes and Fossify Notes exports and `.txt` files |
 | Offline | Installs as an app from the browser and opens with no network |
 
 <p>
@@ -31,6 +33,17 @@ Jot replaces Simple Notes on an Android phone. It keeps what made that app good,
 ## Where notes live
 
 In the browser's IndexedDB on the device you use, and nowhere else. There is no Jot server and no account, so there is nothing to sync and nothing to leak. Clearing the site's data in the browser deletes the notes, so export a copy from Settings now and then.
+
+## How Locked works
+
+| Piece | How |
+| --- | --- |
+| Password to key | PBKDF2-SHA-256, 600,000 rounds, random 16-byte salt. The password is never stored |
+| Data key | A random 256-bit AES key, wrapped by the password key. Changing the password rewraps only this |
+| Each note | Title, text, dates and pin as one JSON object, sealed with AES-256-GCM, a fresh 12-byte IV per save, the note id bound in, padded to 64 bytes |
+| Closing | After 1, 5 or 15 minutes without use, 30 s after Jot goes to the background, or Lock now. Closing drops the key and the opened notes |
+| Export | Locked notes leave sealed, with the header; a new device opens them with the same password |
+| Forgotten password | No reset. Settings can delete every locked note so the tab can start again |
 
 ## Run it
 
@@ -59,6 +72,10 @@ npm test
 | Pin, archive, trash | Pin order, undo, archive and back, read-only trash, restore, delete forever, empty trash |
 | Search | Filters and marks matches, empty state |
 | Checklists | Tap to tick, Enter carries a list on, Enter on an empty item ends it |
+| Formatting | Shortcuts and buttons wrap and unwrap marks; the styled copy wraps to the same height as the text; marks are not in the list |
+| Locked | No plain text or password in storage, lock and reopen, wrong password refused, move in and out, deletes skip the trash |
+| Locked closing | Closes after the idle time and 30 s in the background (with Playwright's fake clock) |
+| Locked export | Exports stay encrypted, open on a new device; change and forget the password |
 | Export and import | Export file, import on a new device, duplicates skipped, Simple Notes and text files |
 | Settings | Theme, font, size and sort apply and survive a reload |
 | Phone | No sideways scroll at 390 px, editor over the list, browser back closes the note |
@@ -73,6 +90,7 @@ npm test
 | --- | --- |
 | `app/index.html`, `app/app.js` | The app: list, editor, settings, export and import |
 | `app/db.js` | IndexedDB storage |
+| `app/vault.js` | Key derivation, key wrapping and note sealing for Locked |
 | `app/sw.js`, `app/manifest.webmanifest` | Offline cache and install |
 | `css/paper.css` | The shared font and colours: paper, ink, one ochre signal |
 | `css/app.css`, `css/site.css` | The app and the website, plain CSS with no build step |

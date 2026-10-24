@@ -36,8 +36,8 @@ What is good:
 
 What is still weak, and what would fix it:
 
-- **Checklists are text.** `[ ]` and `[x]` are honest and portable but not as nice as real boxes. A
-  mirrored overlay could draw boxes over a plain textarea without changing the file format.
+- **Checklists are text.** `[ ]` and `[x]` are honest and portable; ticked lines now fade and strike
+  through, but the box itself is still two brackets.
 - **No sync.** By design, but moving between phone and laptop is an export and an import. A later
   version could send a file between two devices directly.
 - **The tally in the hero** (0 accounts, 0 servers…) uses its own four columns, so its rules do
@@ -56,8 +56,19 @@ What is still weak, and what would fix it:
 | Android | Tauri 2 APK from GitHub releases | next |
 | iOS | Tauri 2; needs a Mac, Xcode and an Apple Developer account | set up, not built |
 
-## Later
+## Locked (1.1.0)
 
-- **Locked notes (opt-in).** A private tab protected by a password: notes in it encrypted on the
-  device (PBKDF2-SHA-256 to a key that wraps a random AES-256-GCM data key, one fresh IV per save).
-  Everything else stays as it is, with no sign-in. Comes after the native apps.
+An opt-in tab with its own password. Everything else stays as it is, with no sign-in.
+
+- The password is stretched with PBKDF2-SHA-256 (600,000 rounds) into a key that wraps a random
+  AES-256-GCM data key. Each note is sealed with a fresh IV, its id bound in, padded to 64 bytes.
+- Locked notes never go to the trash (the trash is not locked), cannot be archived, and leave an
+  export sealed.
+- It closes after the chosen idle minutes, 30 s after Jot goes to the background, or on Lock now.
+- No reset: a lost password means the notes are gone; Settings can delete them to start again.
+
+## Formatting (1.1.0)
+
+`**bold**`, `_italic_`, `~~strike~~` and `` `code` ``, drawn live under a transparent textarea.
+The note stays plain text. This only lines up in a face where every style has the same width,
+which is why the sans option was dropped.

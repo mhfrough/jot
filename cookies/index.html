@@ -56,13 +56,13 @@
         <h2>Local storage</h2>
         <ul>
           <li><code>jot.theme</code>: auto, light or dark.</li>
-          <li><code>jot.font</code>: mono or sans for notes.</li>
           <li><code>jot.size</code>: the note text size.</li>
           <li><code>jot.sort</code>: how the list is sorted.</li>
+          <li><code>jot.lockmin</code>: minutes without use before Locked closes.</li>
           <li><code>stars:mhfrough/jot</code>: the cached GitHub star count, on the website.</li>
         </ul>
         <h2>IndexedDB</h2>
-        <p>The database named <code>jot-notes</code> holds your notes: title, text, the created and updated times, and whether each is pinned, archived or in the trash.</p>
+        <p>The database named <code>jot-notes</code> holds your notes: title, text, the created and updated times, and whether each is pinned, archived or in the trash. Locked notes are kept apart in it, encrypted, with the header that opens them (a salt, a round count and an encrypted key).</p>
         <h2>App cache</h2>
         <p>The service worker keeps a copy of the app's own files so it opens offline. It holds no notes.</p>
         <h2>Removing it all</h2>

@@ -49,11 +49,21 @@
 
       <nav class="tabs" role="tablist" aria-label="Sections" id="tabs">
         <button type="button" role="tab" id="tab-notes" data-tab="notes" aria-selected="true">Notes<span class="count" id="count-notes"></span></button>
+        <button type="button" role="tab" id="tab-locked" data-tab="locked" aria-selected="false" tabindex="-1"><svg class="ico tab-ico" aria-hidden="true"><use href="icons.svg#i-lock-simple"/></svg>Locked<span class="count" id="count-locked"></span></button>
         <button type="button" role="tab" id="tab-archive" data-tab="archive" aria-selected="false" tabindex="-1">Archive<span class="count" id="count-archive"></span></button>
         <button type="button" role="tab" id="tab-trash" data-tab="trash" aria-selected="false" tabindex="-1">Trash<span class="count" id="count-trash"></span></button>
       </nav>
 
       <div class="list-pane" id="listPane" role="tabpanel" aria-labelledby="tab-notes">
+        <form class="gate" id="lockGate" autocomplete="off" hidden>
+          <svg class="gate-art" viewBox="0 0 64 64" aria-hidden="true"><rect class="ga-body" x="10" y="28" width="44" height="34"/><path class="ga-arc" d="M20 28V20a12 12 0 0 1 24 0v8"/><rect class="ga-key" x="29" y="38" width="6" height="12"/></svg>
+          <h2 class="gate-title" id="lgTitle">Locked</h2>
+          <p class="hint" id="lgText"></p>
+          <label class="field"><span>Password</span><input id="lgPass" type="password" required></label>
+          <label class="field" id="lgPass2Wrap" hidden><span>Password again</span><input id="lgPass2" type="password" autocomplete="new-password"></label>
+          <p class="error" id="lgError" role="alert" hidden></p>
+          <button class="btn solid" type="submit" id="lgSubmit">Open</button>
+        </form>
         <div class="list-tools" id="listTools" hidden>
           <p id="listNote"></p>
           <button class="text-btn" type="button" id="listAction"></button>
@@ -78,8 +88,15 @@
         <header class="ed-bar">
           <button class="icon-btn back" type="button" id="backBtn" aria-label="Back to the list"><svg class="ico" aria-hidden="true"><use href="icons.svg#i-arrow-left"/></svg></button>
           <p class="ed-state" id="edState"></p>
+          <div class="fmt" role="group" aria-label="Format">
+            <button class="icon-btn f-b" type="button" data-fmt="b" aria-label="Bold" data-tip="Bold  Ctrl B">B</button>
+            <button class="icon-btn f-i" type="button" data-fmt="i" aria-label="Italic" data-tip="Italic  Ctrl I">I</button>
+            <button class="icon-btn f-s" type="button" data-fmt="s" aria-label="Strike through" data-tip="Strike  Ctrl Shift X">S</button>
+            <button class="icon-btn f-c" type="button" data-fmt="code" aria-label="Code" data-tip="Code  Ctrl E">&lt;/&gt;</button>
+          </div>
           <div class="ed-tools">
             <button class="icon-btn" type="button" id="pinBtn" aria-label="Pin to the top" aria-pressed="false" data-tip="Pin"><svg class="ico" aria-hidden="true"><use href="icons.svg#i-push-pin"/></svg></button>
+            <button class="icon-btn" type="button" id="lockBtn" aria-label="Move to Locked" aria-pressed="false" data-tip="Lock note"><svg class="ico" aria-hidden="true"><use href="icons.svg#i-lock-simple"/></svg></button>
             <button class="icon-btn" type="button" id="archBtn" aria-label="Archive" data-tip="Archive"><svg class="ico" aria-hidden="true"><use href="icons.svg#i-archive"/></svg></button>
             <button class="icon-btn" type="button" id="delBtn" aria-label="Move to the trash" data-tip="Trash"><svg class="ico" aria-hidden="true"><use href="icons.svg#i-trash"/></svg></button>
             <button class="text-btn" type="button" id="restoreBtn" hidden>Restore</button>
@@ -95,7 +112,10 @@
           <label class="sr-only" for="edTitle">Title</label>
           <textarea class="ed-title" id="edTitle" rows="1" placeholder="Title" autocomplete="off" maxlength="300" spellcheck="true"></textarea>
           <label class="sr-only" for="edBody">Note</label>
-          <textarea class="ed-body" id="edBody" placeholder="Start writing…" autocomplete="off" spellcheck="true"></textarea>
+          <div class="ed-wrap">
+            <div class="ed-mirror" id="edMirror" aria-hidden="true"></div>
+            <textarea class="ed-body" id="edBody" placeholder="Start writing…" autocomplete="off" spellcheck="true"></textarea>
+          </div>
         </div>
 
         <footer class="ed-foot">
@@ -124,12 +144,6 @@
             <label><input type="radio" name="theme" value="dark"><span>Dark</span></label>
           </div>
         </div>
-        <div class="set-row"><span id="lblFont">Note type</span>
-          <div class="seg" role="radiogroup" aria-labelledby="lblFont" data-pref="font">
-            <label><input type="radio" name="font" value="mono"><span>Mono</span></label>
-            <label><input type="radio" name="font" value="sans"><span>Sans</span></label>
-          </div>
-        </div>
         <div class="set-row"><span id="lblSize">Text size</span>
           <div class="seg" role="radiogroup" aria-labelledby="lblSize" data-pref="size">
             <label><input type="radio" name="size" value="s"><span>S</span></label>
@@ -147,8 +161,24 @@
       </section>
 
       <section class="set">
+        <h3>Locked</h3>
+        <div class="set-row"><span id="lblLock">Lock after no use for</span>
+          <div class="seg" role="radiogroup" aria-labelledby="lblLock" data-pref="lockmin">
+            <label><input type="radio" name="lockmin" value="1"><span>1 min</span></label>
+            <label><input type="radio" name="lockmin" value="5"><span>5 min</span></label>
+            <label><input type="radio" name="lockmin" value="15"><span>15 min</span></label>
+          </div>
+        </div>
+        <p class="hint">Locked also closes 30 seconds after Jot goes to the background.</p>
+        <div id="lockSet" hidden>
+          <div class="set-row"><span>Password</span><button class="text-btn" type="button" id="lockPassBtn">Change password</button></div>
+          <div class="set-row"><span>Forgot the password?</span><button class="text-btn danger" type="button" id="lockForgetBtn">Delete locked notes</button></div>
+        </div>
+      </section>
+
+      <section class="set">
         <h3>Your notes</h3>
-        <p class="hint">Notes live only in this browser on this device. Export now and then and keep the file somewhere safe.</p>
+        <p class="hint">Notes live only in this browser on this device. Export now and then and keep the file somewhere safe. Locked notes stay encrypted in the file.</p>
         <div class="btn-row">
           <button class="btn" type="button" id="exportBtn"><svg class="ico" aria-hidden="true"><use href="icons.svg#i-download-simple"/></svg><span>Export</span></button>
           <button class="btn" type="button" id="importBtn"><svg class="ico" aria-hidden="true"><use href="icons.svg#i-upload-simple"/></svg><span>Import</span></button>
@@ -174,6 +204,8 @@
     <form class="dlg-in" id="askForm" autocomplete="off">
       <h2 id="askTitle"></h2>
       <p id="askText"></p>
+      <div class="ask-fields" id="askFields"></div>
+      <p class="error" id="askError" role="alert" hidden></p>
       <div class="btn-row end">
         <button class="btn" type="button" id="askCancel">Cancel</button>
         <button class="btn solid" type="submit" id="askOk">OK</button>

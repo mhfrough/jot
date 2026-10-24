@@ -1,11 +1,13 @@
 /* Jot: plain notes kept in this browser. No account, no server, nothing leaves the device.
- * db.js is the IndexedDB layer; everything else lives here.
+ * db.js is the IndexedDB layer; vault.js seals the notes in the Locked tab; everything else lives here.
  */
 
 import * as DB from './db.js'
+import * as V from './vault.js'
 
-const VERSION = '1.0.1'
+const VERSION = '1.1.0'
 const TRASH_DAYS = 30
+const HIDDEN_LOCK_MS = 30000   // Locked closes this long after Jot goes to the background
 
 const $ = (s, r = document) => r.querySelector(s)
 const $$ = (s, r = document) => [...r.querySelectorAll(s)]
@@ -34,12 +36,17 @@ const newId = () => crypto.randomUUID?.() || `${Date.now().toString(36)}-${Math.
 /* ---------- state ---------- */
 
 const S = {
-  notes: new Map(),   // id -> { id, title, body, created, updated, state: active|archived|trashed, trashed, pinned }
+  notes: new Map(),   // id -> { id, space: 'm' | 'l', title, body, created, updated, state: active|archived|trashed, trashed, pinned }
   tab: 'notes',
   open: null,
   query: '',
+  lheader: null,      // the Locked tab's key header, or null before a password is set
+  lkey: null,         // its data key while Locked is open (non-extractable)
 }
+// What is stored: plain in 'notes'; for a locked note, the same fields go inside the seal
 const record = n => ({ id: n.id, title: n.title, body: n.body, created: n.created, updated: n.updated, state: n.state, trashed: n.trashed || 0, pinned: !!n.pinned })
+const sealed = n => ({ title: n.title, body: n.body, created: n.created, updated: n.updated, pinned: !!n.pinned })
+const isLocked = n => n?.space === 'l'
 
 /* ---------- dates ---------- */
 
@@ -74,8 +81,9 @@ async function boot() {
   for (const r of recs) {
     const blank = !r.title?.trim() && !r.body?.trim()
     if (blank || (r.state === 'trashed' && now - r.trashed > TRASH_DAYS * 864e5)) { DB.del(r.id); continue }
-    S.notes.set(r.id, { ...r })
+    S.notes.set(r.id, { ...r, space: 'm' })
   }
+  S.lheader = await DB.getMeta('locked').catch(() => null) || null
   setTab('notes', false)
   body.classList.add('ready')
   if (location.hash === '#new') { history.replaceState(null, '', location.pathname); newNote() }
@@ -95,7 +103,6 @@ function applyLook() {
   if (theme === 'light' || theme === 'dark') root.dataset.theme = theme
   else delete root.dataset.theme
   $('#themeBtn').dataset.mode = theme
-  root.dataset.font = prefs.get('font', 'mono')
   root.dataset.size = prefs.get('size', 'm')
   const dark = theme === 'dark' || (theme === 'system' && matchMedia('(prefers-color-scheme: dark)').matches)
   for (const m of $$('meta[name="theme-color"]')) m.content = dark ? '#151412' : '#f1ece2'
@@ -117,9 +124,10 @@ $('#themeBtn').addEventListener('click', cycleTheme)
 const saving = new Map()
 function persist(n) {
   const prev = saving.get(n.id) || Promise.resolve()
-  const rec = record(n)
+  const locked = isLocked(n), key = S.lkey, rec = locked ? sealed(n) : record(n)
+  if (locked && !key) return prev
   const next = prev
-    .then(() => DB.put(rec))
+    .then(async () => (locked ? DB.put(await V.seal(key, 'l', n.id, rec), 'locked') : DB.put(rec)))
     .then(() => { if (S.open === n.id) $('#edSaved').textContent = 'Saved' })
     .catch(() => { if (S.open === n.id) $('#edSaved').textContent = 'Not saved, storage is full or blocked' })
   saving.set(n.id, next)
@@ -130,8 +138,8 @@ const flushAll = () => Promise.all([...saving.values()])
 
 /* ---------- tabs and list ---------- */
 
-const TABS = ['notes', 'archive', 'trash']
-const TAB_NAME = { notes: 'Notes', archive: 'Archive', trash: 'Trash' }
+const TABS = ['notes', 'locked', 'archive', 'trash']
+const TAB_NAME = { notes: 'Notes', locked: 'Locked', archive: 'Archive', trash: 'Trash' }
 function setTab(tab, focus = true) {
   S.tab = tab
   for (const t of $$('#tabs [role="tab"]')) {
@@ -149,11 +157,13 @@ $('#tabs').addEventListener('keydown', e => {
   const tabs = $$('#tabs [role="tab"]')
   const i = tabs.indexOf(document.activeElement)
   if (i < 0) return
-  const j = { ArrowRight: (i + 1) % 3, ArrowLeft: (i + 2) % 3, Home: 0, End: 2 }[e.key]
+  const n = tabs.length
+  const j = { ArrowRight: (i + 1) % n, ArrowLeft: (i + n - 1) % n, Home: 0, End: n - 1 }[e.key]
   if (j != null) { e.preventDefault(); setTab(tabs[j].dataset.tab) }
 })
 
-const inTab = (n, tab) => (tab === 'notes' ? n.state === 'active' : tab === 'archive' ? n.state === 'archived' : n.state === 'trashed')
+const inTab = (n, tab) => (tab === 'locked' ? isLocked(n) : isLocked(n) ? false
+  : tab === 'notes' ? n.state === 'active' : tab === 'archive' ? n.state === 'archived' : n.state === 'trashed')
 function titleOf(n) {
   if (n.title?.trim()) return n.title.trim()
   const first = (n.body || '').trim().split('\n')[0]
@@ -162,8 +172,10 @@ function titleOf(n) {
 function previewOf(n) {
   const t = (n.body || '').trim()
   const rest = n.title?.trim() ? t : t.split('\n').slice(1).join('\n')
-  return rest.split('\n').map(l => l.replace(/^\s*(?:[-*•]|\d+[.)])?\s*(?:\[( |x)\])?\s*/i, '').trim()).filter(Boolean).join(' · ').slice(0, 220)
+  return plainText(rest).split('\n').map(l => l.replace(/^\s*(?:[-*•]|\d+[.)])?\s*(?:\[( |x)\])?\s*/i, '').trim()).filter(Boolean).join(' · ').slice(0, 220)
 }
+// The note without its formatting marks, for the list preview
+const plainText = t => t.replace(/`([^`\n]+)`/g, '$1').replace(/\*\*(\S(?:.*?\S)?)\*\*/g, '$1').replace(/~~(\S(?:.*?\S)?)~~/g, '$1').replace(/(^|[^\w_])_(\S(?:.*?\S)?)_(?![\w_])/g, '$1$2')
 const matches = (n, q) => `${n.title}\n${n.body}`.toLowerCase().includes(q)
 
 function sorter(tab) {
@@ -199,17 +211,25 @@ function render() {
 function renderNow() {
   const tab = S.tab
   const q = S.query.toLowerCase()
-  const counts = { notes: 0, archive: 0, trash: 0 }
+  const counts = { notes: 0, locked: 0, archive: 0, trash: 0 }
   for (const n of S.notes.values()) for (const t of TABS) if (inTab(n, t)) counts[t]++
   for (const t of TABS) $(`#count-${t}`).textContent = counts[t] || ''
 
   const rows = visible()
+  const shut = tab === 'locked' && !S.lkey
+  body.classList.toggle('unlocked', !!S.lkey)
+  renderGate(shut)
   const tools = $('#listTools')
-  tools.hidden = !(tab === 'trash' && rows.length && !q)
-  if (!tools.hidden) {
+  tools.hidden = !((tab === 'trash' && rows.length && !q) || (tab === 'locked' && S.lkey))
+  if (tab === 'trash') {
     $('#listNote').textContent = `Deleted for good after ${TRASH_DAYS} days`
     $('#listAction').textContent = 'Empty trash'
     $('#listAction').onclick = emptyTrash
+  } else if (tab === 'locked') {
+    const m = Number(prefs.get('lockmin', '5'))
+    $('#listNote').textContent = `Open · locks after ${m} min idle`
+    $('#listAction').textContent = 'Lock now'
+    $('#listAction').onclick = () => lockLocked('now')
   }
 
   const frag = document.createDocumentFragment()
@@ -233,10 +253,11 @@ function renderNow() {
   $('#list').replaceChildren(frag)
 
   const empty = $('#empty')
-  empty.hidden = rows.length > 0
+  empty.hidden = rows.length > 0 || shut
   if (!empty.hidden) {
     const [title, text] = q ? ['No match', `Nothing in ${TAB_NAME[tab].toLowerCase()} has “${S.query}”.`] : ({
       notes: ['No notes yet', 'Press N or tap + to write one. It saves as you type.'],
+      locked: ['No locked notes yet', 'Write one here, or open any note and tap the lock to move it in.'],
       archive: ['Nothing archived', 'Archive a note to keep it out of the way without deleting it.'],
       trash: ['Trash is empty', `Deleted notes stay here for ${TRASH_DAYS} days.`],
     })[tab]
@@ -275,6 +296,8 @@ function openNote(id, { focus = null, push = true } = {}) {
   edTitle.value = n.title || ''
   edBody.value = n.body || ''
   edTitle.readOnly = edBody.readOnly = ro
+  $('#editor').classList.toggle('ro', ro)
+  paint()
   $('#editor').hidden = false
   $('#deskEmpty').hidden = true
   body.classList.add('reading')
@@ -298,10 +321,15 @@ function syncTools(n) {
   $('#pinBtn').dataset.tip = n.pinned ? 'Unpin' : 'Pin'
   $('#archBtn').setAttribute('aria-label', n.state === 'archived' ? 'Move back to notes' : 'Archive')
   $('#archBtn').dataset.tip = n.state === 'archived' ? 'Unarchive' : 'Archive'
-  for (const id of ['#pinBtn', '#archBtn', '#delBtn']) $(id).hidden = trashed
+  for (const id of ['#pinBtn', '#archBtn', '#delBtn', '#lockBtn']) $(id).hidden = trashed
+  $('#archBtn').hidden = trashed || isLocked(n)
   $('#restoreBtn').hidden = $('#purgeBtn').hidden = !trashed
-  $('#edState').textContent = { active: 'Notes', archived: 'Archive', trashed: 'Trash, read only' }[n.state]
-  $('#edState').classList.toggle('warn', n.state !== 'active')
+  $('#lockBtn').setAttribute('aria-pressed', isLocked(n))
+  $('#lockBtn').setAttribute('aria-label', isLocked(n) ? 'Move out of Locked' : 'Move to Locked')
+  $('#lockBtn').dataset.tip = isLocked(n) ? 'Unlock note' : 'Lock note'
+  $('#delBtn').setAttribute('aria-label', isLocked(n) ? 'Delete for good' : 'Move to the trash')
+  $('#edState').textContent = isLocked(n) ? 'Locked' : { active: 'Notes', archived: 'Archive', trashed: 'Trash, read only' }[n.state]
+  $('#edState').classList.toggle('warn', n.state !== 'active' || isLocked(n))
 }
 
 function dates(n) {
@@ -316,9 +344,60 @@ function counts() {
   $('#edCount').textContent = `${words.toLocaleString()} ${words === 1 ? 'word' : 'words'} · ${t.length.toLocaleString()} chars`
 }
 function grow() {
-  edTitle.style.height = 'auto'
-  edTitle.style.height = `${edTitle.scrollHeight}px`
+  for (const el of [edTitle, edBody]) {
+    el.style.height = 'auto'
+    el.style.height = `${el.scrollHeight}px`
+  }
 }
+
+/* ---------- formatting: **bold**, _italic_, ~~strike~~, `code` ----------
+   The note stays plain text. A copy of it is drawn under the textarea with the marks styled and
+   the markers faint; the textarea's own text is transparent, so you type into the styled copy.
+   JetBrains Mono keeps every weight and slant the same width, so the two always line up. */
+
+const mirror = $('#edMirror')
+const esc = t => t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+const mk = m => `<span class="mk">${m}</span>`
+function inline(t) {
+  const codes = []
+  t = t.replace(/`([^`\n]+)`/g, (_, c) => { codes.push(`${mk('`')}<code>${c}</code>${mk('`')}`); return `\u0000${codes.length - 1}\u0000` })
+  t = t.replace(/\*\*(\S(?:.*?\S)?)\*\*/g, (_, x) => `${mk('**')}<b>${x}</b>${mk('**')}`)
+  t = t.replace(/~~(\S(?:.*?\S)?)~~/g, (_, x) => `${mk('~~')}<s>${x}</s>${mk('~~')}`)
+  t = t.replace(/(^|[^\w_])_(\S(?:.*?\S)?)_(?![\w_])/g, (_, a, x) => `${a}${mk('_')}<i>${x}</i>${mk('_')}`)
+  return t.replace(/\u0000(\d+)\u0000/g, (_, i) => codes[i])
+}
+function paint() {
+  mirror.innerHTML = esc(edBody.value).split('\n').map(line => {
+    const done = line.match(/^(\s*(?:- )?)(\[x\])(.*)$/i)
+    return done ? `${done[1]}${mk(done[2])}<span class="done">${inline(done[3])}</span>` : inline(line)
+  }).join('\n') + '\u200b'
+}
+
+// Wraps the selection in a mark, or takes the mark off if it is already there
+function format(m) {
+  if (edBody.readOnly) return
+  const v = edBody.value, s = edBody.selectionStart, e = edBody.selectionEnd, w = m.length
+  const inner = v.slice(s, e)
+  edBody.focus()
+  if (v.slice(s - w, s) === m && v.slice(e, e + w) === m) {
+    edBody.setSelectionRange(s - w, e + w); insert(inner); edBody.setSelectionRange(s - w, e - w)
+  } else if (inner.length > 2 * w && inner.startsWith(m) && inner.endsWith(m)) {
+    insert(inner.slice(w, -w)); edBody.setSelectionRange(s, e - 2 * w)
+  } else {
+    insert(`${m}${inner}${m}`); edBody.setSelectionRange(s + w, e + w)
+  }
+}
+const FORMATS = { b: '**', i: '_', s: '~~', code: '`' }
+for (const b of $$('[data-fmt]')) {
+  b.addEventListener('pointerdown', e => e.preventDefault())   // keep the selection in the note
+  b.addEventListener('click', () => format(FORMATS[b.dataset.fmt]))
+}
+edBody.addEventListener('keydown', e => {
+  if (!(e.ctrlKey || e.metaKey) || e.altKey) return
+  const k = e.key.toLowerCase()
+  const m = k === 'b' ? '**' : k === 'i' ? '_' : k === 'e' ? '`' : (k === 'x' && e.shiftKey) ? '~~' : null
+  if (m) { e.preventDefault(); format(m) }
+})
 
 function closeEditor(silent = false) {
   if (!S.open) return
@@ -342,7 +421,7 @@ function onEdit() {
   editTimer = setTimeout(commitEdit, 300)
 }
 edTitle.addEventListener('input', () => { grow(); onEdit() })
-edBody.addEventListener('input', onEdit)
+edBody.addEventListener('input', () => { paint(); grow(); onEdit() })
 edTitle.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); edBody.focus(); edBody.setSelectionRange(0, 0) } })
 for (const el of [edTitle, edBody]) el.addEventListener('blur', () => commitEdit())
 addEventListener('resize', grow)
@@ -409,14 +488,15 @@ function dropIfEmpty(id) {
   fresh = null
   if (n.title.trim() || n.body.trim()) return
   S.notes.delete(id)
-  ;(saving.get(id) || Promise.resolve()).then(() => DB.del(id))
+  ;(saving.get(id) || Promise.resolve()).then(() => DB.del(id, isLocked(n) ? 'locked' : 'notes'))
 }
 
 function newNote() {
-  if (S.tab !== 'notes') setTab('notes', false)
+  const space = S.tab === 'locked' && S.lkey ? 'l' : 'm'
+  if (space === 'm' && S.tab !== 'notes') setTab('notes', false)
   if (S.query) { S.query = ''; $('#search').value = '' }
   const now = Date.now()
-  const n = { id: newId(), title: '', body: '', created: now, updated: now, state: 'active', trashed: 0, pinned: false }
+  const n = { id: newId(), space, title: '', body: '', created: now, updated: now, state: 'active', trashed: 0, pinned: false }
   S.notes.set(n.id, n)
   fresh = n.id   // stored on the first keystroke, not before
   openNote(n.id, { focus: true })
@@ -448,7 +528,39 @@ $('#pinBtn').addEventListener('click', () => {
   toast(n.pinned ? 'Pinned to the top' : 'Unpinned')
 })
 $('#archBtn').addEventListener('click', () => moveTo(current()?.state === 'archived' ? 'active' : 'archived'))
-$('#delBtn').addEventListener('click', () => moveTo('trashed'))
+$('#delBtn').addEventListener('click', async () => {
+  const n = current()
+  if (!isLocked(n)) return moveTo('trashed')
+  // Locked notes never go to the trash, which is not locked
+  if (!await ask('Delete this locked note for good?', 'Locked notes skip the trash, so this cannot be undone.', 'Delete forever')) return
+  fresh = null
+  S.notes.delete(n.id)
+  await saving.get(n.id)
+  await DB.del(n.id, 'locked')
+  closeEditor()
+  toast('Deleted for good')
+})
+$('#lockBtn').addEventListener('click', async () => {
+  const n = current(); if (!n) return
+  if (!S.lkey) {
+    toast(S.lheader ? 'Open Locked first, then move the note in' : 'Set a password for Locked first')
+    closeEditor(); setTab('locked', false)
+    return
+  }
+  commitEdit(); fresh = null
+  await saving.get(n.id)
+  const into = !isLocked(n)
+  if (into) {
+    n.state = 'active'; n.trashed = 0
+    await DB.move('notes', 'locked', n.id, await V.seal(S.lkey, 'l', n.id, sealed(n)))
+    n.space = 'l'
+  } else {
+    n.space = 'm'
+    await DB.move('locked', 'notes', n.id, record(n))
+  }
+  syncTools(n); render()
+  toast(into ? 'Moved to Locked' : 'Moved back to notes')
+})
 $('#restoreBtn').addEventListener('click', () => moveTo('active'))
 $('#purgeBtn').addEventListener('click', async () => {
   const n = current(); if (!n) return
@@ -498,16 +610,27 @@ for (const d of $$('dialog')) {
   for (const b of $$('[data-close]', d)) b.addEventListener('click', () => d.close())
 }
 
-function ask(title, text, ok) {
+// One small dialog for every question: a confirm, or a few password fields with a check
+function ask(title, text, ok, fields = [], check = null) {
   const d = $('#ask')
   $('#askTitle').textContent = title
   $('#askText').textContent = text
   $('#askOk').textContent = ok
+  $('#askError').hidden = true
+  $('#askFields').replaceChildren(...fields.map(f => h('label', { class: 'field' }, h('span', { text: f.label }),
+    h('input', { type: 'password', name: f.name, autocomplete: 'off', required: true }))))
   d.showModal()
-  $('#askCancel').focus()
+  ;($('#askFields input') || $('#askCancel')).focus()
   return new Promise(resolve => {
     const finish = v => { $('#askForm').onsubmit = null; $('#askCancel').onclick = null; d.onclose = null; if (d.open) d.close(); resolve(v) }
-    $('#askForm').onsubmit = e => { e.preventDefault(); finish(true) }
+    $('#askForm').onsubmit = async e => {
+      e.preventDefault()
+      if (!fields.length) return finish(true)
+      const values = Object.fromEntries($$('#askFields input').map(i => [i.name, i.value]))
+      const problem = check && await check(values)
+      if (problem) { $('#askError').textContent = problem; $('#askError').hidden = false; return }
+      finish(values)
+    }
     $('#askCancel').onclick = () => finish(false)
     d.onclose = () => finish(false)
   })
@@ -515,7 +638,7 @@ function ask(title, text, ok) {
 
 /* ---------- settings ---------- */
 
-const PREF_DEFAULT = { theme: 'system', font: 'mono', size: 'm', sort: 'updated' }
+const PREF_DEFAULT = { theme: 'system', size: 'm', sort: 'updated', lockmin: '5' }
 function syncSettings() {
   for (const g of $$('.seg[data-pref]')) {
     const v = prefs.get(g.dataset.pref, PREF_DEFAULT[g.dataset.pref])
@@ -525,7 +648,7 @@ function syncSettings() {
 for (const g of $$('.seg[data-pref]')) g.addEventListener('change', e => {
   prefs.set(g.dataset.pref, e.target.value)
   applyLook()
-  if (g.dataset.pref === 'sort') render()
+  if (g.dataset.pref === 'sort' || g.dataset.pref === 'lockmin') render()
   grow()
 })
 
@@ -536,14 +659,17 @@ $('#settingsBtn').addEventListener('click', async () => {
   $('#importResult').textContent = ''
   const est = await navigator.storage?.estimate?.().catch(() => null)
   const kept = await navigator.storage?.persisted?.().catch(() => false)
-  const n = S.notes.size
-  $('#storeText').textContent = `${n} ${n === 1 ? 'note' : 'notes'}${est ? `, ${kb(est.usage)} used` : ''}${kept ? ', kept by the browser' : ''}`
+  const n = [...S.notes.values()].filter(x => !isLocked(x)).length
+  const l = S.lheader ? (await DB.all('locked').catch(() => [])).length : 0
+  $('#storeText').textContent = `${n} ${n === 1 ? 'note' : 'notes'}${l ? ` and ${l} locked` : ''}${est ? `, ${kb(est.usage)} used` : ''}${kept ? ', kept by the browser' : ''}`
+  $('#lockSet').hidden = !S.lheader
   $('#settings').showModal()
 })
 const kb = b => (b < 1e6 ? `${Math.max(1, Math.round(b / 1024))} KB` : `${(b / 1048576).toFixed(1)} MB`)
 
 $('#eraseBtn').addEventListener('click', async () => {
-  if (!await ask('Erase every note?', 'All notes, the archive and the trash are deleted from this device. Files you exported are not touched.', 'Erase everything')) return
+  if (!await ask('Erase every note?', 'All notes, locked notes, the archive and the trash are deleted from this device. Files you exported are not touched.', 'Erase everything')) return
+  S.lkey = null
   S.notes.clear()
   await DB.wipe()
   location.reload()
@@ -561,9 +687,12 @@ function download(name, text, type) {
 
 $('#exportBtn').addEventListener('click', async () => {
   commitEdit(); await flushAll()
-  const notes = [...S.notes.values()].map(record)
-  download(`jot-${stamp()}.json`, JSON.stringify({ app: 'jot', kind: 'notes', v: 2, made: new Date().toISOString(), notes }, null, 2), 'application/json')
-  $('#importResult').textContent = `Exported ${notes.length} ${notes.length === 1 ? 'note' : 'notes'}.`
+  const notes = [...S.notes.values()].filter(n => !isLocked(n)).map(record)
+  // Locked notes leave as they are stored: sealed, with the header that opens them
+  const locked = S.lheader ? { header: S.lheader, notes: (await DB.all('locked')).map(r => ({ id: r.id, iv: V.b64(r.iv), ct: V.b64(r.ct) })) } : null
+  download(`jot-${stamp()}.json`, JSON.stringify({ app: 'jot', kind: 'notes', v: 2, made: new Date().toISOString(), notes, locked }, null, 2), 'application/json')
+  const l = locked?.notes.length || 0
+  $('#importResult').textContent = `Exported ${notes.length} ${notes.length === 1 ? 'note' : 'notes'}${l ? ` and ${l} locked, still encrypted` : ''}.`
 })
 
 $('#importBtn').addEventListener('click', () => $('#fileIn').click())
@@ -574,7 +703,7 @@ $('#fileIn').addEventListener('change', async e => {
   const out = $('#importResult')
   let added = 0, skipped = 0
   try {
-    for (const f of files) { const r = importText(await f.text(), f.name, f.lastModified); added += r.added; skipped += r.skipped }
+    for (const f of files) { const r = await importText(await f.text(), f.name, f.lastModified); added += r.added; skipped += r.skipped }
     await flushAll()
     render()
     out.textContent = `Imported ${added} ${added === 1 ? 'note' : 'notes'}${skipped ? `, skipped ${skipped} already here` : ''}.`
@@ -585,8 +714,9 @@ $('#fileIn').addEventListener('change', async e => {
 
 function parse(text) { try { return JSON.parse(text) } catch { return null } }
 
-function importText(text, name, modified) {
+async function importText(text, name, modified) {
   const f = parse(text)
+  const lockedIn = f?.app === 'jot' && f.locked?.header ? await importLocked(f.locked) : { added: 0, skipped: 0 }
   let list
   if (f?.app === 'jot' && Array.isArray(f.notes)) list = f.notes
   else if (Array.isArray(f) && f.length && f.every(x => x && typeof x === 'object' && 'value' in x && 'title' in x)) list = fromSimpleNotes(f)
@@ -598,7 +728,7 @@ function importText(text, name, modified) {
   const now = Date.now()
   for (const x of list) {
     const n = {
-      id: newId(), title: String(x.title ?? '').slice(0, 300), body: String(x.body ?? ''),
+      id: newId(), space: 'm', title: String(x.title ?? '').slice(0, 300), body: String(x.body ?? ''),
       created: Number(x.created) || now, updated: Number(x.updated) || Number(x.created) || now,
       state: ['active', 'archived', 'trashed'].includes(x.state) ? x.state : 'active',
       trashed: x.state === 'trashed' ? (Number(x.trashed) || now) : 0, pinned: !!x.pinned,
@@ -610,7 +740,38 @@ function importText(text, name, modified) {
     persist(n)
     added++
   }
-  return { added, skipped }
+  return { added: added + lockedIn.added, skipped: skipped + lockedIn.skipped }
+}
+
+// Locked notes from a Jot export: kept sealed. With no password here yet, the file's password
+// becomes this device's; otherwise they are opened with the file's password and sealed again with ours.
+async function importLocked({ header, notes }) {
+  const recs = (Array.isArray(notes) ? notes : []).map(r => ({ id: String(r.id), iv: V.unb64(r.iv), ct: V.unb64(r.ct) }))
+  if (!recs.length) return { added: 0, skipped: 0 }
+  if (!S.lheader) {
+    await DB.setMeta('locked', header); await DB.putMany(recs, 'locked')
+    S.lheader = header
+    return { added: recs.length, skipped: 0 }
+  }
+  const have = new Set((await DB.all('locked')).map(r => r.id))
+  if (header.salt === S.lheader.salt) {
+    const incoming = recs.filter(r => !have.has(r.id))
+    await DB.putMany(incoming, 'locked')
+    if (S.lkey) for (const r of incoming) S.notes.set(r.id, { id: r.id, space: 'l', state: 'active', trashed: 0, ...(await V.unseal(S.lkey, 'l', r)) })
+    return { added: incoming.length, skipped: recs.length - incoming.length }
+  }
+  if (!S.lkey) throw new Error('This file has locked notes with another password. Open Locked first, then import it again.')
+  let key = null
+  const ok = await ask('Locked notes in this file', 'They use a different password. Type the password they were locked with, and they move into your Locked tab.', 'Bring them in',
+    [{ name: 'pass', label: 'Their password' }], async ({ pass }) => { key = await V.open(header, pass).catch(() => null); return key ? null : 'That password does not open them.' })
+  if (!ok || !key) return { added: 0, skipped: recs.length }
+  let added = 0
+  for (const r of recs) {
+    if (have.has(r.id)) continue
+    const n = { id: r.id, space: 'l', state: 'active', trashed: 0, ...(await V.unseal(key, 'l', r)) }
+    S.notes.set(n.id, n); persist(n); added++
+  }
+  return { added, skipped: recs.length - added }
 }
 
 // Simple Notes and Fossify Notes: [{ id, title, value, type, path, protectionType }]
@@ -629,15 +790,114 @@ function fromSimpleNotes(arr) {
   })
 }
 
+/* ---------- the Locked tab ---------- */
+
+function renderGate(on) {
+  const f = $('#lockGate')
+  f.hidden = !on
+  if (!on) return
+  const setup = !S.lheader
+  $('#lgTitle').textContent = setup ? 'Lock notes with a password' : 'Locked'
+  $('#lgText').textContent = setup
+    ? 'Notes here are encrypted on this device and open only with this password. It is not stored anywhere and cannot be reset: if you forget it, these notes cannot be opened.'
+    : 'Type the password to open your locked notes.'
+  $('#lgPass2Wrap').hidden = !setup
+  $('#lgPass2').required = setup
+  $('#lgPass').autocomplete = setup ? 'new-password' : 'current-password'
+  $('#lgSubmit').textContent = setup ? 'Set password' : 'Open'
+}
+
+$('#lockGate').addEventListener('submit', async e => {
+  e.preventDefault()
+  const err = $('#lgError'), pass = $('#lgPass').value, btn = $('#lgSubmit')
+  err.hidden = true
+  const fail = t => { err.textContent = t; err.hidden = false; btn.disabled = false; $('#lgPass').select() }
+  btn.disabled = true
+  if (!S.lheader) {
+    if (pass.length < 6) return fail('Use at least 6 characters. A few words are best.')
+    if (pass !== $('#lgPass2').value) return fail('The two passwords are not the same.')
+    const { header, key } = await V.create(pass)
+    await DB.setMeta('locked', header)
+    S.lheader = header; S.lkey = key
+  } else {
+    const key = await V.open(S.lheader, pass).catch(() => null)
+    if (!key) return fail('That password does not open Locked.')
+    S.lkey = key
+    for (const r of await DB.all('locked')) {
+      try { S.notes.set(r.id, { id: r.id, space: 'l', state: 'active', trashed: 0, ...(await V.unseal(key, 'l', r)) }) } catch { /* left alone, never overwritten */ }
+    }
+  }
+  btn.disabled = false
+  $('#lgPass').value = $('#lgPass2').value = ''
+  lastActive = Date.now()
+  render()
+})
+
+// Locking drops the key and every opened note; what is on disk stays sealed
+async function lockLocked(why) {
+  if (!S.lkey) return
+  const open = current()
+  if (isLocked(open)) { commitEdit(); closeEditor(true); if (history.state?.note) history.back() }
+  await flushAll()
+  S.lkey = null
+  for (const [id, n] of S.notes) if (isLocked(n)) S.notes.delete(id)
+  if (isLocked(open)) { edTitle.value = edBody.value = ''; paint() }
+  render()
+  if (why === 'now') toast('Locked')
+}
+
+// Auto-lock: after the chosen minutes without use, and soon after Jot goes to the background
+let lastActive = Date.now(), hiddenTimer = 0, hiddenAt = 0
+for (const ev of ['pointerdown', 'keydown', 'input', 'wheel', 'touchstart']) addEventListener(ev, () => { lastActive = Date.now() }, { passive: true, capture: true })
+setInterval(() => {
+  if (S.lkey && Date.now() - lastActive > Number(prefs.get('lockmin', '5')) * 60000) lockLocked('idle')
+}, 5000)
+document.addEventListener('visibilitychange', () => {
+  clearTimeout(hiddenTimer)
+  if (document.visibilityState === 'hidden') { hiddenAt = Date.now(); hiddenTimer = setTimeout(() => lockLocked('hidden'), HIDDEN_LOCK_MS) }
+  else if (hiddenAt && Date.now() - hiddenAt >= HIDDEN_LOCK_MS) lockLocked('hidden')
+})
+
+$('#lockPassBtn').addEventListener('click', async () => {
+  let header = null
+  const ok = await ask('Change the Locked password', 'Your locked notes stay as they are; only the key that opens them is locked again with the new password.', 'Change password',
+    [{ name: 'old', label: 'Current password' }, { name: 'new1', label: 'New password' }, { name: 'new2', label: 'New password again' }],
+    async ({ old, new1, new2 }) => {
+      if (new1.length < 6) return 'Use at least 6 characters.'
+      if (new1 !== new2) return 'The two new passwords are not the same.'
+      header = await V.rewrap(S.lheader, old, new1).catch(() => null)
+      return header ? null : 'The current password is not right.'
+    })
+  if (!ok || !header) return
+  await DB.setMeta('locked', header)
+  S.lheader = header
+  toast('Password changed')
+})
+$('#lockForgetBtn').addEventListener('click', async () => {
+  if (!await ask('Delete every locked note?', 'Use this only if the password is lost. Every locked note and the password are deleted from this device for good; your other notes are not touched.', 'Delete locked notes')) return
+  await lockLocked()
+  await DB.clear('locked'); await DB.delMeta('locked')
+  S.lheader = null
+  $('#lockSet').hidden = true
+  render()
+  toast('Locked notes deleted')
+})
+
 /* ---------- keyboard ---------- */
 
 const KEYS = [
   ['N', 'New note', newNote],
   ['/', 'Search', () => $('#search').focus()],
   ['1', 'Notes', () => setTab('notes')],
-  ['2', 'Archive', () => setTab('archive')],
-  ['3', 'Trash', () => setTab('trash')],
+  ['2', 'Locked', () => setTab('locked')],
+  ['3', 'Archive', () => setTab('archive')],
+  ['4', 'Trash', () => setTab('trash')],
+  ['L', 'Lock Locked now', () => lockLocked('now')],
   ['T', 'Switch theme', cycleTheme],
+  ['Ctrl B', 'Bold', null],
+  ['Ctrl I', 'Italic', null],
+  ['Ctrl Shift X', 'Strike through', null],
+  ['Ctrl E', 'Code', null],
   ['?', 'These shortcuts', () => openKeys()],
   ['Esc', 'Close the note or dialog', null],
   ['Ctrl S', 'Save now (it saves anyway)', null],

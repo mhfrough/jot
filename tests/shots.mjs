@@ -16,7 +16,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms))
 const H = 3600e3, D = 24 * H, now = Date.now()
 export const SAMPLE = [
   { title: 'Groceries', body: '[ ] basmati rice\n[ ] cardamom pods\n[x] milk\n[ ] lemons, four\n[x] coriander\n[ ] dishwasher tablets', pinned: true, created: now - 9 * D, updated: now - 2 * H },
-  { title: 'Car service', body: 'Due at 60,000 miles.\nGarage on Mill Lane — ask them to look at the front brakes and the wiper on the passenger side.\n\nBook for a Saturday morning if they have one.', created: now - 30 * D, updated: now - 5 * H },
+  { title: 'Car service', body: 'Due at **60,000 miles**.\nGarage on Mill Lane — ask them to look at the _front brakes_ and the wiper on the passenger side.\n\n~~Friday~~ Book for a Saturday morning. Reference `MOT-2291`.', created: now - 30 * D, updated: now - 5 * H },
   { title: 'Books to read', body: '- The Remains of the Day\n- A Fine Balance\n- The Shadow Lines\n- Piranesi', created: now - 60 * D, updated: now - 1.2 * D },
   { title: 'Gift ideas', body: 'Ammi: a teapot with a blue glaze, from the market on Saturday.\nSara: a good fountain pen and green ink.', created: now - 40 * D, updated: now - 3 * D },
   { title: 'Trip packing', body: 'Adapters, the grey jacket, chargers, passport, printed booking, medicine for the flight.', created: now - 90 * D, updated: now - 12 * D },
@@ -26,7 +26,7 @@ export const SAMPLE = [
 async function seed(page) {
   await page.goto(`${BASE}/app/`)
   await page.evaluate(async notes => {
-    const db = await new Promise((res, rej) => { const r = indexedDB.open('jot-notes', 1); r.onupgradeneeded = () => r.result.createObjectStore('notes', { keyPath: 'id' }); r.onsuccess = () => res(r.result); r.onerror = rej })
+    const db = await new Promise((res, rej) => { const r = indexedDB.open('jot-notes'); r.onupgradeneeded = () => r.result.createObjectStore('notes', { keyPath: 'id' }); r.onsuccess = () => res(r.result); r.onerror = rej })
     const t = db.transaction('notes', 'readwrite')
     notes.forEach((n, i) => t.objectStore('notes').put({ id: `sample-${i}`, state: 'active', trashed: 0, pinned: false, ...n }))
     await new Promise(r => { t.oncomplete = r })

@@ -1,9 +1,9 @@
 /* Jot service worker: keeps the whole app on the device, so it opens offline and at once.
    Cache first; a new version installs in the background and waits until you reload. */
 
-const VERSION = 'jot-v1.0.1'
+const VERSION = 'jot-v1.1.0'
 const FILES = [
-  './', 'index.html', 'app.js', 'db.js', 'icons.svg', 'manifest.webmanifest',
+  './', 'index.html', 'app.js', 'db.js', 'vault.js', 'icons.svg', 'manifest.webmanifest',
   'icons/icon-192.png', 'icons/icon-512.png', 'icons/maskable-512.png',
   '../css/paper.css', '../css/app.css', '../icon.svg', '../fonts/JetBrainsMono.woff2',
 ]

@@ -42,9 +42,31 @@ async function write(page, title, text) {
 const titles = page => page.$$eval('#list .it-title', els => els.map(e => e.textContent.trim()))
 const tab = async (page, name) => { await page.click(`#tab-${name}`); await sleep(60) }
 const open = (page, title) => page.click(`#list .item:has(.it-title:text-is("${title}"))`)
-const stored = page => page.evaluate(() => new Promise(res => {
-  const r = indexedDB.open('jot-notes'); r.onsuccess = () => { const q = r.result.transaction('notes').objectStore('notes').getAll(); q.onsuccess = () => res(q.result) }
+const stored = (page, store = 'notes') => page.evaluate(store => new Promise(res => {
+  const r = indexedDB.open('jot-notes'); r.onsuccess = () => { const q = r.result.transaction(store).objectStore(store).getAll(); q.onsuccess = () => res(q.result) }
+}), store)
+// Everything Jot keeps, as text: both stores (ciphertext as base64), the key header and local storage
+const everything = page => page.evaluate(() => new Promise(res => {
+  const r = indexedDB.open('jot-notes')
+  r.onsuccess = () => {
+    const t = r.result.transaction(['notes', 'locked', 'meta'])
+    const out = {}
+    let left = 3
+    const b64 = u => btoa(String.fromCharCode(...new Uint8Array(u)))
+    for (const st of ['notes', 'locked', 'meta']) {
+      const q = t.objectStore(st).getAll()
+      q.onsuccess = () => { out[st] = JSON.stringify(q.result, (k, v) => (v instanceof Uint8Array ? b64(v) : v)); if (!--left) res(out.notes + out.locked + out.meta + JSON.stringify(localStorage)) }
+    }
+  }
 }))
+const LOCKPASS = 'brass lantern seven'
+async function setLocked(page, pass = LOCKPASS) {
+  await tab(page, 'locked')
+  await page.fill('#lgPass', pass)
+  if (await page.isVisible('#lgPass2')) await page.fill('#lgPass2', pass)
+  await page.click('#lgSubmit')
+  await page.waitForSelector('#lockGate', { state: 'hidden' })
+}
 
 async function test(name, fn) {
   if (only && !name.toLowerCase().includes(only)) return
@@ -59,7 +81,7 @@ console.log(`Jot tests against ${BASE}`)
 await test('Opens straight away: no sign-in, no foreign requests', async () => {
   const { ctx, page } = await fresh()
   check(await page.isVisible('#listPane') && await page.isVisible('#tabs'), 'the notes list is not showing')
-  check(!(await page.$('input[type="password"]')), 'a password field is on the page')
+  check(!(await page.isVisible('input[type="password"]')), 'a password field shows on opening')
   check(await page.isVisible('#empty'), 'no empty state for a new device')
   await write(page, 'Hello', 'first words')
   await sleep(300)
@@ -156,6 +178,127 @@ await test('Checklists: tap a box to tick it, lists carry on', async () => {
   await ctx.close()
 })
 
+await test('Formatting: bold, italic, strike and code, drawn in line with the text', async () => {
+  const { ctx, page } = await fresh()
+  await write(page, 'Styled', 'plain words here')
+  await open(page, 'Styled')
+  await page.evaluate(() => { const b = document.querySelector('#edBody'); b.focus(); b.setSelectionRange(6, 11) })
+  await page.keyboard.press('Control+b')
+  check((await page.inputValue('#edBody')) === 'plain **words** here', `bold: ${await page.inputValue('#edBody')}`)
+  await page.keyboard.press('Control+b')
+  check((await page.inputValue('#edBody')) === 'plain words here', `bold off: ${await page.inputValue('#edBody')}`)
+  await page.evaluate(() => { const b = document.querySelector('#edBody'); b.setSelectionRange(0, 5) })
+  await page.click('[data-fmt="i"]')
+  await page.evaluate(() => { const b = document.querySelector('#edBody'); b.setSelectionRange(b.value.length - 4, b.value.length) })
+  await page.click('[data-fmt="s"]')
+  await page.keyboard.press('End'); await page.keyboard.type(' and ')
+  await page.click('[data-fmt="code"]'); await page.keyboard.type('x = 1')
+  const v = await page.inputValue('#edBody')
+  check(v === '_plain_ words ~~here~~ and `x = 1`', `marks: ${v}`)
+  check(await page.$eval('#edMirror', m => !!m.querySelector('i') && !!m.querySelector('s') && !!m.querySelector('code')), 'marks not drawn')
+  // the styled copy wraps exactly like the text: same height
+  await page.fill('#edBody', '**bold** '.repeat(60) + '\n_slanted_ '.repeat(20))
+  const [a, b] = await page.evaluate(() => [document.querySelector('#edBody').scrollHeight, document.querySelector('#edMirror').scrollHeight])
+  check(Math.abs(a - b) <= 2, `mirror ${b}px, text ${a}px: they would drift apart`)
+  await page.locator('#edBody').blur()
+  await page.waitForFunction(() => document.querySelector('#edSaved').textContent === 'Saved')
+  check(!(await page.textContent('#list .item:has(.it-title:text-is("Styled")) .it-text')).includes('**'), 'marks shown in the list preview')
+  await ctx.close()
+})
+
+await test('Locked: password, encrypted at rest, lock and reopen, wrong password refused', async () => {
+  const { ctx, page } = await fresh()
+  await write(page, 'Shopping', 'bread')
+  await tab(page, 'locked')
+  check(await page.isVisible('#lockGate') && await page.isVisible('#lgPass2'), 'no password setup on first visit')
+  await page.fill('#lgPass', 'abc'); await page.fill('#lgPass2', 'abc'); await page.click('#lgSubmit')
+  check(await page.isVisible('#lgError'), 'a short password was accepted')
+  await page.fill('#lgPass', LOCKPASS); await page.fill('#lgPass2', LOCKPASS + 'x'); await page.click('#lgSubmit')
+  check(await page.isVisible('#lgError'), 'two different passwords were accepted')
+  await setLocked(page)
+  await write(page, 'Locker code', 'GRANITE 4471 at the gym')
+  check((await titles(page)).includes('Locker code'), 'locked note not listed')
+  const all = await everything(page)
+  check(!all.includes('GRANITE') && !all.includes('Locker code') && !all.includes(LOCKPASS), 'locked text or the password is stored in plain form')
+  check((await stored(page, 'locked')).length === 1 && !(await stored(page)).some(r => r.title === 'Locker code'), 'locked note not in its own store')
+  await page.click('#tab-locked'); await page.click('#listAction'); await sleep(150)
+  check(await page.isVisible('#lockGate') && !(await page.content()).includes('GRANITE'), 'locked text left in the page after locking')
+  await page.fill('#lgPass', 'wrong password'); await page.click('#lgSubmit')
+  await page.waitForSelector('#lgError:not([hidden])')
+  await page.reload(); await page.waitForSelector('body.ready')
+  await tab(page, 'locked')
+  check(await page.isVisible('#lockGate') && !(await page.isVisible('#lgPass2')), 'not asking for the password after a reload')
+  await setLocked(page)
+  check((await titles(page)).includes('Locker code'), 'locked note missing after reopening')
+  // move a plain note in and out
+  await tab(page, 'notes'); await open(page, 'Shopping'); await page.click('#lockBtn'); await sleep(150)
+  check((await stored(page, 'locked')).length === 2 && !(await stored(page)).some(r => r.title === 'Shopping'), 'note not moved into Locked')
+  await tab(page, 'locked'); await open(page, 'Shopping'); await page.click('#lockBtn'); await sleep(150)
+  check((await stored(page)).some(r => r.title === 'Shopping') && (await stored(page, 'locked')).length === 1, 'note not moved back out')
+  // deleting a locked note skips the trash
+  await write(page, 'Throwaway', 'x')
+  await tab(page, 'locked')
+  if (!(await titles(page)).includes('Throwaway')) { await tab(page, 'notes'); await open(page, 'Throwaway'); await page.click('#lockBtn'); await sleep(100); await tab(page, 'locked') }
+  await open(page, 'Throwaway'); await page.click('#delBtn'); await page.click('#askOk'); await sleep(150)
+  check((await stored(page, 'locked')).length === 1, `locked note not deleted: ${(await stored(page, 'locked')).length} left`)
+  await tab(page, 'trash')
+  check(!(await titles(page)).includes('Throwaway'), 'a locked note went to the unlocked trash')
+  await ctx.close()
+})
+
+await test('Locked: closes after the idle time and soon after going to the background', async () => {
+  const { ctx, page } = await fresh()
+  await page.clock.install()
+  await page.reload(); await page.waitForSelector('body.ready')
+  await setLocked(page)
+  await write(page, 'Idle test', 'secret words')
+  await page.clock.fastForward('06:00')
+  await page.clock.runFor(6000)
+  await tab(page, 'locked')
+  check(await page.isVisible('#lockGate'), 'Locked still open after 6 minutes without use')
+  await setLocked(page)
+  await page.evaluate(() => { Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => 'hidden' }); document.dispatchEvent(new Event('visibilitychange')) })
+  await page.clock.runFor(31000)
+  await page.evaluate(() => { Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => 'visible' }); document.dispatchEvent(new Event('visibilitychange')) })
+  check(await page.isVisible('#lockGate'), 'Locked still open 30 s after going to the background')
+  await ctx.close()
+})
+
+await test('Locked: exports stay encrypted and open on a new device; change and forget the password', async () => {
+  const a = await fresh()
+  await setLocked(a.page)
+  await write(a.page, 'Bank', 'PIN hint: ORCHARD')
+  await a.page.click('#settingsBtn')
+  const [dl] = await Promise.all([a.page.waitForEvent('download'), a.page.click('#exportBtn')])
+  const file = path.join(TMP, 'locked.json'); await dl.saveAs(file)
+  const raw = fs.readFileSync(file, 'utf8')
+  check(!raw.includes('ORCHARD') && JSON.parse(raw).locked.notes.length === 1, 'export has locked text in plain form')
+  // change the password, then the old one no longer opens it
+  await a.page.click('#lockPassBtn')
+  const inputs = a.page.locator('#askFields input')
+  await inputs.nth(0).fill(LOCKPASS); await inputs.nth(1).fill('new door brass'); await inputs.nth(2).fill('new door brass')
+  await a.page.click('#askOk'); await sleep(1500)
+  await a.page.keyboard.press('Escape')
+  await a.page.click('#tab-locked'); await a.page.click('#listAction'); await sleep(100)
+  await a.page.fill('#lgPass', LOCKPASS); await a.page.click('#lgSubmit')
+  await a.page.waitForSelector('#lgError:not([hidden])')
+  await setLocked(a.page, 'new door brass')
+  check((await titles(a.page)).includes('Bank'), 'new password did not open Locked')
+  // forget: every locked note and the password go
+  await a.page.click('#settingsBtn'); await a.page.click('#lockForgetBtn'); await a.page.click('#askOk'); await sleep(200)
+  check((await stored(a.page, 'locked')).length === 0, 'locked notes not deleted')
+  await a.ctx.close()
+
+  const b = await fresh()
+  await b.page.click('#settingsBtn')
+  await b.page.setInputFiles('#fileIn', file)
+  await b.page.waitForFunction(() => /Imported 1 note/.test(document.querySelector('#importResult').textContent))
+  await b.page.keyboard.press('Escape')
+  await setLocked(b.page)
+  check((await titles(b.page)).includes('Bank'), 'locked note did not come over')
+  await b.ctx.close()
+})
+
 await test('Export, import into a new device, Simple Notes and text files', async () => {
   const a = await fresh()
   await write(a.page, 'Passport', 'renew in May'); await write(a.page, 'Recipes', 'dal with lentils')
@@ -189,19 +332,18 @@ await test('Export, import into a new device, Simple Notes and text files', asyn
   await b.ctx.close()
 })
 
-await test('Settings: theme, font, size and sort apply and stay', async () => {
+await test('Settings: theme, size and sort apply and stay', async () => {
   const { ctx, page } = await fresh()
   await write(page, 'Beta', 'x'); await write(page, 'Alpha', 'y')
   await page.click('#settingsBtn')
   await page.click('.seg[data-pref="theme"] label:has(input[value="dark"])')
-  await page.click('.seg[data-pref="font"] label:has(input[value="sans"])')
   await page.click('.seg[data-pref="size"] label:has(input[value="l"])')
   await page.click('.seg[data-pref="sort"] label:has(input[value="title"])')
   await page.keyboard.press('Escape'); await sleep(100)
   check((await titles(page)).join() === 'Alpha,Beta', `A–Z sort: ${await titles(page)}`)
   await page.reload(); await page.waitForSelector('body.ready')
   const d = await page.evaluate(() => ({ ...document.documentElement.dataset, bg: getComputedStyle(document.body).backgroundColor }))
-  check(d.theme === 'dark' && d.font === 'sans' && d.size === 'l', `prefs after reload: ${JSON.stringify(d)}`)
+  check(d.theme === 'dark' && d.size === 'l', `prefs after reload: ${JSON.stringify(d)}`)
   check(d.bg === 'rgb(21, 20, 18)', `dark background: ${d.bg}`)
   await ctx.close()
 })
