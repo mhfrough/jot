@@ -355,3 +355,31 @@ body.reading .desk { display: grid; animation: slide 0.28s var(--ease); }
 .toast-btn { border: 0; background: none; color: var(--signal); font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; font-size: 11.5px; padding: 6px 8px; cursor: pointer; border-radius: 0; }
 .toast-btn:hover { background: color-mix(in srgb, var(--paper) 12%, transparent); }
 body.reading .toast { bottom: calc(52px + env(safe-area-inset-bottom)); }
+
+/* ---------- the desktop app's own title bar ---------- */
+
+:root.desktop { --title-h: 38px; }
+:root.desktop body { padding-top: var(--title-h); }
+:root.desktop .shell, :root.desktop .side, :root.desktop .editor { height: calc(100dvh - var(--title-h)); }
+:root.desktop .desk { top: var(--title-h); }
+
+.titlebar {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 25;
+  display: flex; align-items: center; gap: 14px; height: var(--title-h); padding: 0 14px;
+  background: var(--paper); border-bottom: 1px solid var(--rule); user-select: none;
+}
+.tb-dots { display: flex; gap: 8px; }
+.tb-dot {
+  position: relative; display: grid; place-items: center; width: 12px; height: 12px; padding: 0; border: 0; border-radius: 50%;
+  background: var(--rule-2); color: transparent; cursor: pointer; transition: background-color 0.12s var(--ease);
+}
+.tb-dot svg { width: 8px; height: 8px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; }
+/* Grey until the pointer reaches one, then that one takes the colour everyone knows */
+.tb-dot:hover { color: rgb(0 0 0 / 0.6); }
+.tb-close:hover { background: #ff5f57; }
+.tb-min:hover { background: #febc2e; }
+.tb-max:hover { background: #28c840; }
+/* Their names hang from the left so the first is not cut off at the window's edge */
+.tb-dot[data-tip]:hover::after { left: -2px; translate: none; }
+.tb-dot:active { filter: brightness(0.85); }
+.tb-title { flex: 1; align-self: stretch; display: flex; align-items: center; color: var(--ink-3); font-size: 12px; font-weight: 600; letter-spacing: 0.02em; }
