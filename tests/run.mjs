@@ -435,6 +435,11 @@ await test('Website: every page loads clean with no sideways scroll at 390 px', 
     check(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), `/${p} scrolls sideways`)
     await ctx.close()
   }
+  // Every page's footer lists the same set of the maker's other tools as the home page
+  const tools = async p => { const ctx = await browser.newContext(); const page = await ctx.newPage(); await page.goto(`${BASE}/${p}`); const t = await page.$$eval('.foot-col:last-of-type a', as => as.map(a => a.href)); await ctx.close(); return t.join(' ') }
+  const home = await tools('')
+  check(home.includes('/flick/') && home.includes('/swoop/'), `home footer tools: ${home}`)
+  for (const p of ['design/', 'changelog/', 'privacy/', 'terms/', 'cookies/', 'credits/', 'sitemap/']) check((await tools(p)) === home, `/${p} footer does not list the same tools as the home page`)
   // Every footer link can be clicked: nothing sits on top of it, on a laptop or a phone
   for (const p of ['', 'privacy/']) for (const vp of [{ width: 1440, height: 900 }, { width: 390, height: 844 }]) {
     const ctx = await browser.newContext({ viewport: vp, isMobile: vp.width < 500 })

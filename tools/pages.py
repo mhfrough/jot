@@ -15,6 +15,12 @@ SPRITE = '''<svg xmlns="http://www.w3.org/2000/svg" style="display:none">
   </svg>'''
 
 
+# The maker's other tools, as on the home page footer (index.html); the website test checks the two match
+MORE = [('flick', 'Flick, send files nearby'), ('pinch', 'Pinch, shrink images'), ('scrawl', 'Scrawl, a sketchbook'),
+        ('sizzle', 'Sizzle, promo reels by your AI agent'), ('swoop', 'Swoop, screenshots')]
+MORE_LINKS = ''.join(f'<a href="https://mhfrough.github.io/{slug}/">{name}</a>' for slug, name in MORE)
+
+
 def page(slug, no, title, desc, h1, body, base='../', wide=False, out=None):
     # base: how links reach the site root; the 404 page is served at any depth, so it uses /jot/
     B = base
@@ -82,6 +88,7 @@ def page(slug, no, title, desc, h1, body, base='../', wide=False, out=None):
     <div class="wrap grid foot-in">
       <div class="foot-col"><p class="foot-h">Jot</p><a href="{B}app/">Open the app</a><a href="{B}">About</a><a href="https://github.com/mhfrough/jot">Source on GitHub</a></div>
       <div class="foot-col"><p class="foot-h">Pages</p><a href="{B}design/">Design</a><a href="{B}changelog/">Changelog</a><a href="{B}privacy/">Privacy</a><a href="{B}terms/">Terms</a><a href="{B}cookies/">Cookies</a><a href="{B}credits/">Credits</a><a href="{B}sitemap/">Sitemap</a></div>
+      <div class="foot-col"><p class="foot-h">More by the maker</p>{MORE_LINKS}</div>
       <p class="foot-small">Made by <a href="https://github.com/mhfrough">Mohammad Hamza</a>. MIT licence.</p>
       <p class="foot-word" aria-hidden="true">jot<i class="caret"></i></p>
     </div>
