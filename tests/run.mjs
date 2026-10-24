@@ -435,6 +435,19 @@ await test('Website: every page loads clean with no sideways scroll at 390 px', 
     check(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), `/${p} scrolls sideways`)
     await ctx.close()
   }
+  // Every footer link can be clicked: nothing sits on top of it, on a laptop or a phone
+  for (const p of ['', 'privacy/']) for (const vp of [{ width: 1440, height: 900 }, { width: 390, height: 844 }]) {
+    const ctx = await browser.newContext({ viewport: vp, isMobile: vp.width < 500 })
+    const page = await ctx.newPage()
+    await page.goto(`${BASE}/${p}`, { waitUntil: 'networkidle' })
+    const covered = await page.evaluate(() => [...document.querySelectorAll('.foot a')].filter(a => {
+      a.scrollIntoView({ block: 'center', behavior: 'instant' })
+      const r = a.getBoundingClientRect(), top = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2)
+      return !(top === a || a.contains(top))
+    }).map(a => a.textContent.trim()))
+    check(!covered.length, `/${p} at ${vp.width} px: footer links covered: ${covered.join(', ')}`)
+    await ctx.close()
+  }
 })
 
 await browser.close()

@@ -278,7 +278,9 @@ path.gi[d^="M6 36"] { fill: none; stroke: var(--ink); stroke-width: 3; }
 .foot-col a:hover { color: var(--ink); text-decoration: underline; }
 .foot-h { font-size: 10.5px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-3); margin-bottom: 6px; }
 .foot-small { grid-column: 10 / -1; font-size: 12px; color: var(--ink-3); align-self: start; }
-.foot-word { grid-column: 1 / -1; display: flex; align-items: baseline; gap: 0.02em; font-size: clamp(120px, 31vw, 440px); line-height: 0.72; font-weight: 800; letter-spacing: -0.08em; color: var(--ink); margin-bottom: -0.04em; user-select: none; }
+.foot-word { grid-column: 1 / -1; display: flex; align-items: baseline; gap: 0.02em; font-size: clamp(120px, 31vw, 440px); line-height: 0.72; font-weight: 800; letter-spacing: -0.08em; color: var(--ink); margin-bottom: -0.04em; user-select: none;
+  /* decoration only: its baseline-aligned cursor lifts its box over the last row of links, which must stay clickable */
+  pointer-events: none; }
 .foot-word .caret { width: 0.5em; height: 0.12em; }
 @media (max-width: 899px) { .foot-col { grid-column: span 2; } .foot-small { grid-column: 1 / -1; } }
 
