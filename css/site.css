@@ -27,7 +27,7 @@ img { height: auto; }
 a { color: inherit; text-decoration-thickness: 1px; text-underline-offset: 0.22em; }
 a:hover { text-decoration-thickness: 2px; }
 b { font-weight: 700; }
-code { font: inherit; padding: 0 0.2em; background: var(--hover); border-radius: 3px; }
+code { font: inherit; padding: 0 0.2em; background: var(--hover); }
 ::selection { background: color-mix(in srgb, var(--ink) 18%, transparent); }
 :focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
 button { font: inherit; color: inherit; }
@@ -238,11 +238,23 @@ path.gi[d^="M6 36"] { fill: none; stroke: var(--ink); stroke-width: 3; }
 .step p { color: var(--ink-2); font-size: 14px; max-width: 36ch; }
 @media (max-width: 899px) { .steps { grid-template-columns: 1fr; } }
 
+/* (install strip removed; see Get Jot) */
 .install { margin-top: clamp(56px, 7vw, 96px); padding: clamp(24px, 4vw, 48px) 0; border-block: 1px solid var(--ink); row-gap: 20px; align-items: center; }
 .install-h { grid-column: 1 / span 4; font-size: clamp(24px, 2.6vw, 36px); font-weight: 800; letter-spacing: -0.05em; line-height: 1.05; }
 .install-p { grid-column: 5 / span 5; color: var(--ink-2); }
 .install-b { grid-column: 10 / -1; justify-self: end; }
 @media (max-width: 899px) { .install-h, .install-p { grid-column: 1 / -1; } .install-b { grid-column: 1 / -1; justify-self: start; } }
+
+/* Get Jot: one cell per platform, with a status tag and the way to install */
+.plat { grid-template-rows: auto auto auto auto 1fr; align-content: start; }
+.plat .glyph { margin-bottom: 18px; }
+.plat h3, .plat p { grid-row: auto; }
+.plat .btn { justify-self: start; align-self: end; margin-top: 8px; }
+.tag { justify-self: start; padding: 2px 8px; font-size: 10.5px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; border: 1px solid var(--ink); }
+.tag.on { background: var(--ink); color: var(--paper); }
+.soon { align-self: end; padding-top: 12px; border-top: 1px dashed var(--rule-2); font-size: 12px !important; color: var(--ink-3) !important; }
+.get-note { margin-top: 24px; font-size: 13.5px; color: var(--ink-2); }
+@media (max-width: 599px) { .plat { grid-template-rows: none; } .plat h3 { margin-top: 0; } }
 
 /* Questions */
 .faq { grid-column: 5 / -1; border-top: 1px solid var(--rule-2); }
@@ -280,6 +292,37 @@ path.gi[d^="M6 36"] { fill: none; stroke: var(--ink); stroke-width: 3; }
 .page-body th, .page-body td { text-align: left; vertical-align: top; padding: 12px 12px 12px 0; border-bottom: 1px solid var(--rule-2); }
 .page-body th { font-size: 10.5px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-3); }
 .updated { font-size: 12px; color: var(--ink-3); }
+.page-body.wide { grid-column: 1 / -1; max-width: none; }
+.page-body.wide > p, .page-body.wide > ul:not(.sws), .page-body.wide > ol, .page-body.wide > table { max-width: 72ch; }
+.page-body .lead { font-size: 18px; color: var(--ink); max-width: 60ch; }
+.page-body h2 .tag, .page-body h2 .updated { margin-left: 12px; vertical-align: 4px; }
+.rules { display: grid; gap: 10px; padding-left: 1.4em; }
+.rules b { color: var(--ink); }
+.sw-h { margin-top: 8px; font-size: 10.5px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-3); }
+.page-body .sws { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 0; padding: 0; border-top: 1px solid var(--rule-2); border-left: 1px solid var(--rule-2); list-style: none; }
+.sw { display: grid; gap: 2px; padding: 0 0 12px; border-right: 1px solid var(--rule-2); border-bottom: 1px solid var(--rule-2); font-size: 12px; background: #f1ece2; color: #5d574d; }
+.sws.dark .sw { background: #151412; color: #a39b8b; }
+.sw-chip { height: 72px; margin-bottom: 8px; border-bottom: 1px solid rgb(127 127 127 / 0.2); }
+.sw b, .sw code, .sw > span:last-child { padding-inline: 12px; }
+.sw b { color: #1f1d1a; }
+.sws.dark .sw b { color: #ebe5d9; }
+.sw code { background: none; }
+.specimen { display: grid; gap: 14px; padding: 28px 0; border-block: 1px solid var(--rule-2); color: var(--ink); overflow: hidden; }
+.sp-1 { font-size: clamp(44px, 7vw, 108px); font-weight: 800; letter-spacing: -0.065em; line-height: 0.95; }
+.sp-2 { font-size: clamp(24px, 3.4vw, 46px); font-weight: 800; letter-spacing: -0.05em; line-height: 1.1; }
+.sp-3 { font-size: 18px; font-weight: 800; letter-spacing: -0.03em; }
+.sp-4 { font-size: 15px; color: var(--ink-2); }
+.sp-5 { font-size: 11px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-3); }
+.grid-demo { display: grid; grid-template-columns: repeat(var(--cols), minmax(0, 1fr)); gap: var(--gap); height: 90px; }
+@media (max-width: 899px) { .page-body .sws { grid-template-columns: repeat(2, minmax(0, 1fr)); } .grid-demo span:nth-child(n+5) { display: none; } .grid-demo span:nth-child(-n+4) { background: color-mix(in srgb, var(--signal) 22%, transparent); border-color: var(--signal); } .grid-demo span:first-child { background: color-mix(in srgb, var(--ink) 14%, transparent); border-color: var(--ink); } }
+.grid-demo span { background: color-mix(in srgb, var(--signal) 22%, transparent); border-inline: 1px solid var(--signal); }
+.grid-demo span:nth-child(-n+4) { background: color-mix(in srgb, var(--ink) 14%, transparent); border-color: var(--ink); }
+.geo-set { width: 100%; max-width: 720px; height: auto; }
+.kit { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; padding: 24px 0; border-block: 1px solid var(--rule-2); }
+.icons { display: flex; gap: 28px; }
+.icons img { width: 96px; height: 96px; }
+.ver { padding-block: 18px; border-top: 1px solid var(--rule-2); }
+.ver ul { margin-top: 10px; }
 @media (max-width: 899px) { .page .sec-head h1, .page-body { grid-column: 1 / -1; } }
 
 /* ---------- reveal ---------- */

@@ -1,4 +1,5 @@
-/* Jot app. Paper and ink, one monospaced face, hairline rules, one ochre signal.
+/* Jot app. Paper and ink, one monospaced face, hairline rules, one ochre signal, square corners
+   everywhere (the only curves are true circles).
    Colours and the font come from paper.css. Plain CSS, no build step. */
 
 :root {
@@ -37,10 +38,10 @@ a:hover { text-decoration-thickness: 2px; }
 svg { display: block; }
 kbd {
   display: inline-grid; place-items: center; min-width: 1.7em; height: 1.7em; padding: 0 0.4em;
-  border: 1px solid var(--rule-2); border-bottom-width: 2px; border-radius: 4px;
+  border: 1px solid var(--rule-2); border-bottom-width: 2px; border-radius: 0;
   font: 500 11px/1 var(--mono); color: var(--ink-2); background: var(--sheet);
 }
-mark { background: var(--mark); color: inherit; border-radius: 2px; }
+mark { background: var(--mark); color: inherit; border-radius: 0; }
 ::selection { background: color-mix(in srgb, var(--ink) 18%, transparent); }
 :focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
 [hidden] { display: none !important; }
@@ -61,7 +62,7 @@ mark { background: var(--mark); color: inherit; border-radius: 2px; }
 
 .icon-btn {
   position: relative; display: inline-grid; place-items: center;
-  width: 38px; height: 38px; padding: 0; border: 0; border-radius: 6px;
+  width: 38px; height: 38px; padding: 0; border: 0; border-radius: 0;
   background: transparent; color: var(--ink-2); cursor: pointer;
   transition: background-color 0.15s var(--ease), color 0.15s var(--ease);
 }
@@ -72,19 +73,19 @@ mark { background: var(--mark); color: inherit; border-radius: 2px; }
 @media (hover: hover) {
   [data-tip]:hover::after {
     content: attr(data-tip); position: absolute; top: calc(100% + 6px); left: 50%; translate: -50% 0; z-index: 40;
-    padding: 4px 8px; border-radius: 4px; background: var(--ink); color: var(--paper);
+    padding: 4px 8px; border-radius: 0; background: var(--ink); color: var(--paper);
     font: 500 11px/1.3 var(--mono); white-space: pre; pointer-events: none;
   }
 }
 .text-btn {
-  min-height: 32px; padding: 0 10px; border: 1px solid var(--rule-2); border-radius: 6px;
+  min-height: 32px; padding: 0 10px; border: 1px solid var(--rule-2); border-radius: 0;
   background: transparent; cursor: pointer; font-size: 12.5px; font-weight: 600;
 }
 .text-btn:hover { background: var(--hover); }
 .text-btn.danger { color: var(--signal-ink); }
 .btn {
   display: inline-flex; align-items: center; gap: 8px; min-height: 40px; padding: 0 14px;
-  border: 1px solid var(--rule-2); border-radius: 8px; background: var(--sheet);
+  border: 1px solid var(--rule-2); border-radius: 0; background: var(--sheet);
   font-size: 13px; font-weight: 600; cursor: pointer;
 }
 .btn:hover { border-color: var(--ink-3); }
@@ -116,7 +117,7 @@ body.ready .shell { opacity: 1; }
 .search .ico { position: absolute; left: 12px; width: 16px; height: 16px; color: var(--ink-3); pointer-events: none; }
 .search input {
   width: 100%; height: 40px; padding: 0 40px 0 36px;
-  border: 1px solid var(--rule); border-radius: 8px; background: var(--sheet);
+  border: 1px solid var(--rule); border-radius: 0; background: var(--sheet);
   font-size: 13.5px; outline: none; transition: border-color 0.15s;
 }
 .search input::placeholder { color: var(--ink-3); }
@@ -183,7 +184,7 @@ body.ready .shell { opacity: 1; }
 .fab {
   position: fixed; right: 18px; bottom: calc(18px + env(safe-area-inset-bottom)); z-index: 20;
   display: grid; place-items: center; width: 58px; height: 58px; padding: 0;
-  border: 0; border-radius: 16px; background: var(--ink); color: var(--paper);
+  border: 0; border-radius: 0; background: var(--ink); color: var(--paper);
   box-shadow: var(--shadow); cursor: pointer; transition: transform 0.2s var(--ease);
 }
 .fab .ico { width: 24px; height: 24px; }
@@ -260,7 +261,7 @@ body.reading .desk { display: grid; animation: slide 0.28s var(--ease); }
 
 .dlg {
   width: min(100% - 24px, 34rem); max-height: min(100% - 48px, 46rem);
-  padding: 0; border: 1px solid var(--rule-2); border-radius: 12px;
+  padding: 0; border: 1px solid var(--rule-2); border-radius: 0;
   background: var(--sheet); color: var(--ink); box-shadow: var(--shadow);
 }
 .dlg::backdrop { background: rgb(20 18 15 / 0.42); backdrop-filter: blur(2px); }
@@ -269,8 +270,9 @@ body.reading .desk { display: grid; animation: slide 0.28s var(--ease); }
 @keyframes rise { from { transform: translateY(12px); opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .dlg[open] { animation: none; } }
 @media (max-width: 600px) {
-  .dlg:not(.small) { width: 100%; max-width: 100%; margin: auto 0 0; max-height: 92dvh; border-radius: 16px 16px 0 0; border-bottom: 0; }
+  .dlg:not(.small) { width: 100%; max-width: 100%; margin: auto 0 0; max-height: 92dvh; border-radius: 0; border-bottom: 0; }
 }
+.dlg { scrollbar-width: thin; scrollbar-color: var(--rule-2) transparent; }
 .dlg-in { display: grid; gap: 18px; padding: 20px 22px calc(22px + env(safe-area-inset-bottom)); }
 .dlg-head { display: flex; align-items: center; justify-content: space-between; margin: -6px -8px 0 0; }
 .dlg h2 { font-size: 17px; font-weight: 750; letter-spacing: -0.02em; }
@@ -285,10 +287,10 @@ body.reading .desk { display: grid; animation: slide 0.28s var(--ease); }
 .about { padding-top: 4px; color: var(--ink-3); }
 
 /* Segmented choice: a row of radio buttons in one hairline box */
-.seg { display: inline-flex; border: 1px solid var(--rule-2); border-radius: 8px; padding: 2px; gap: 2px; }
+.seg { display: inline-flex; border: 1px solid var(--rule-2); border-radius: 0; padding: 2px; gap: 2px; }
 .seg label { position: relative; cursor: pointer; }
 .seg input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
-.seg span { display: grid; place-items: center; min-width: 40px; height: 30px; padding: 0 10px; border-radius: 6px; font-size: 12px; font-weight: 600; color: var(--ink-2); }
+.seg span { display: grid; place-items: center; min-width: 40px; height: 30px; padding: 0 10px; border-radius: 0; font-size: 12px; font-weight: 600; color: var(--ink-2); }
 .seg label:hover span { color: var(--ink); }
 .seg input:checked + span { background: var(--ink); color: var(--paper); }
 .seg input:focus-visible + span { outline: 2px solid var(--ink); outline-offset: 2px; }
@@ -302,11 +304,11 @@ body.reading .desk { display: grid; animation: slide 0.28s var(--ease); }
 .toast {
   position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom)); z-index: 60;
   display: flex; align-items: center; gap: 18px; padding: 10px 10px 10px 16px; min-height: 44px;
-  background: var(--ink); color: var(--paper); border-radius: 10px; box-shadow: var(--shadow);
+  background: var(--ink); color: var(--paper); border-radius: 0; box-shadow: var(--shadow);
   font-size: 12.5px; font-weight: 600;
   transform: translate(-50%, 12px); opacity: 0; transition: transform 0.22s var(--ease), opacity 0.22s var(--ease);
 }
 .toast.show { transform: translate(-50%, 0); opacity: 1; }
-.toast-btn { border: 0; background: none; color: var(--signal); font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; font-size: 11.5px; padding: 6px 8px; cursor: pointer; border-radius: 6px; }
+.toast-btn { border: 0; background: none; color: var(--signal); font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; font-size: 11.5px; padding: 6px 8px; cursor: pointer; border-radius: 0; }
 .toast-btn:hover { background: color-mix(in srgb, var(--paper) 12%, transparent); }
 body.reading .toast { bottom: calc(52px + env(safe-area-inset-bottom)); }

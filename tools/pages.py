@@ -15,7 +15,9 @@ SPRITE = '''<svg xmlns="http://www.w3.org/2000/svg" style="display:none">
   </svg>'''
 
 
-def page(slug, no, title, desc, h1, body):
+def page(slug, no, title, desc, h1, body, base='../', wide=False, out=None):
+    # base: how links reach the site root; the 404 page is served at any depth, so it uses /jot/
+    B = base
     url = f'{SITE}{slug}/'
     ld = {"@context": "https://schema.org", "@graph": [
         {"@type": "WebPage", "url": url, "name": h1, "description": desc, "inLanguage": "en",
@@ -35,8 +37,8 @@ def page(slug, no, title, desc, h1, body):
   <meta name="theme-color" content="#f1ece2" media="(prefers-color-scheme: light)">
   <meta name="theme-color" content="#151412" media="(prefers-color-scheme: dark)">
   <meta name="color-scheme" content="light dark">
-  <link rel="icon" href="../icon.svg" type="image/svg+xml">
-  <link rel="apple-touch-icon" href="../apple-touch-icon.png">
+  <link rel="icon" href="{B}icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="{B}apple-touch-icon.png">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="Jot">
   <meta property="og:title" content="{title}">
@@ -45,10 +47,10 @@ def page(slug, no, title, desc, h1, body):
   <meta property="og:image" content="{SITE}assets/og-image.jpg">
   <meta name="twitter:card" content="summary_large_image">
   {THEME}
-  <link rel="stylesheet" href="../css/paper.css">
-  <link rel="stylesheet" href="../css/site.css">
+  <link rel="stylesheet" href="{B}css/paper.css">
+  <link rel="stylesheet" href="{B}css/site.css">
   <script type="application/ld+json">{json.dumps(ld)}</script>
-  <script defer src="../js/site.js"></script>
+  <script defer src="{B}js/site.js"></script>
 </head>
 <body>
   {SPRITE}
@@ -56,30 +58,30 @@ def page(slug, no, title, desc, h1, body):
   <div class="gridlines" aria-hidden="true"></div>
   <header class="top">
     <div class="wrap top-in">
-      <a class="word" href="../" aria-label="Jot, home"><span>jot</span><i class="caret" aria-hidden="true"></i></a>
+      <a class="word" href="{B}" aria-label="Jot, home"><span>jot</span><i class="caret" aria-hidden="true"></i></a>
       <div class="top-act" style="margin-left:auto">
         <a class="star" href="https://github.com/mhfrough/jot" data-stars="mhfrough/jot"><svg aria-hidden="true"><use href="#i-github"/></svg><span class="star-label">Star</span><span class="sr-only"> Jot on GitHub</span><span class="sr-only star-sr"></span><span class="star-n" aria-hidden="true"></span></a>
         <button class="sq-btn" type="button" data-theme-toggle aria-label="Theme: same as the device"><svg aria-hidden="true"><use href="#i-theme"/></svg></button>
-        <a class="btn ink" href="../app/"><span>Open Jot</span><svg aria-hidden="true"><use href="#i-arrow"/></svg></a>
+        <a class="btn ink" href="{B}app/"><span>Open Jot</span><svg aria-hidden="true"><use href="#i-arrow"/></svg></a>
       </div>
     </div>
   </header>
   <main id="main" tabindex="-1" class="page wrap">
     <header class="sec-head grid">
       <p class="sec-no">{no}</p>
-      <p class="sec-label"><a href="../">Jot</a> / {h1}</p>
+      <p class="sec-label"><a href="{B}">Jot</a> / {h1}</p>
       <h1>{h1}</h1>
     </header>
     <div class="grid">
-      <div class="page-body">
+      <div class="page-body{' wide' if wide else ''}">
 {body}
       </div>
     </div>
   </main>
   <footer class="foot">
     <div class="wrap grid foot-in">
-      <div class="foot-col"><p class="foot-h">Jot</p><a href="../app/">Open the app</a><a href="../">About</a><a href="https://github.com/mhfrough/jot">Source on GitHub</a></div>
-      <div class="foot-col"><p class="foot-h">Pages</p><a href="../privacy/">Privacy</a><a href="../terms/">Terms</a><a href="../cookies/">Cookies</a><a href="../credits/">Credits</a><a href="../sitemap/">Sitemap</a></div>
+      <div class="foot-col"><p class="foot-h">Jot</p><a href="{B}app/">Open the app</a><a href="{B}">About</a><a href="https://github.com/mhfrough/jot">Source on GitHub</a></div>
+      <div class="foot-col"><p class="foot-h">Pages</p><a href="{B}design/">Design</a><a href="{B}changelog/">Changelog</a><a href="{B}privacy/">Privacy</a><a href="{B}terms/">Terms</a><a href="{B}cookies/">Cookies</a><a href="{B}credits/">Credits</a><a href="{B}sitemap/">Sitemap</a></div>
       <p class="foot-small">Made by <a href="https://github.com/mhfrough">Mohammad Hamza</a>. MIT licence.</p>
       <p class="foot-word" aria-hidden="true">jot<i class="caret"></i></p>
     </div>
@@ -87,6 +89,9 @@ def page(slug, no, title, desc, h1, body):
 </body>
 </html>
 '''
+    if out:
+        (ROOT / out).write_text(html, encoding='utf8')
+        return
     (ROOT / slug).mkdir(exist_ok=True)
     (ROOT / slug / 'index.html').write_text(html, encoding='utf8')
 
@@ -146,16 +151,151 @@ page('credits', 'P4', 'Credits and licences for Jot',
           <tbody>
             <tr><td><a href="https://github.com/JetBrains/JetBrainsMono">JetBrains Mono</a></td><td>JetBrains</td><td>SIL Open Font License 1.1</td></tr>
             <tr><td><a href="https://phosphoricons.com">Phosphor Icons</a> (in the app)</td><td>Helena Zhang and Tobias Fried</td><td>MIT</td></tr>
+            <tr><td><a href="https://playwright.dev">Playwright</a> (tests and screenshots)</td><td>Microsoft</td><td>Apache 2.0</td></tr>
           </tbody>
         </table>
         <h2>Pictures</h2>
-        <p>Every picture on the site is a real screenshot of Jot with sample notes. The shapes are drawn in plain SVG.</p>''')
+        <p>Every picture on the site is a real screenshot of Jot with sample notes. The shapes are drawn in plain SVG.</p>
+        <h2>Ideas</h2>
+        <p>The grid follows Josef Müller-Brockmann's <i>Grid Systems in Graphic Design</i>. The focus on the words owes a lot to iA Writer, and the plain list and editor to Simplenote and Simple Notes. See the <a href="../design/">design page</a>.</p>''')
 
-PAGES = [('', 'Jot'), ('app/', 'The Jot app'), ('privacy/', 'Privacy'), ('terms/', 'Terms'),
-         ('cookies/', 'Cookies'), ('credits/', 'Credits'), ('sitemap/', 'Sitemap')]
+def sw(name, hexv, role):
+    return f'<li class="sw"><span class="sw-chip" style="background:{hexv}"></span><b>{name}</b><code>{hexv}</code><span>{role}</span></li>'
+
+LIGHT = [('paper', '#f1ece2', 'the page'), ('sheet', '#f8f5ee', 'the note, dialogs'), ('ink', '#1f1d1a', 'text, solid shapes'),
+         ('ink-2', '#5d574d', 'supporting text'), ('ink-3', '#8b8478', 'labels, dates'), ('rule', '#ddd5c6', 'hairlines'),
+         ('signal', '#b07d00', 'marks and shapes'), ('signal-ink', '#8a5f00', 'signal as text, 4.8:1')]
+DARK = [('paper', '#151412', 'the page'), ('sheet', '#1b1a17', 'the note, dialogs'), ('ink', '#ebe5d9', 'text, solid shapes'),
+        ('ink-2', '#a39b8b', 'supporting text'), ('ink-3', '#6f695e', 'labels, dates'), ('rule', '#2a2824', 'hairlines'),
+        ('signal', '#e0aa2a', 'marks, shapes and text'), ('select', '#272420', 'the open note in the list')]
+SW_LIGHT = ''.join(sw(*c) for c in LIGHT)
+SW_DARK = ''.join(sw(*c) for c in DARK)
+GRID_DEMO = ''.join('<span></span>' for _ in range(12))
+
+page('design', 'P0', 'Design: the Jot design system, paper, ink and a grid',
+     'How Jot looks and why: the paper and carbon colours, the ochre signal, JetBrains Mono, the 12-column grid, the geometry and the components.',
+     'Design', f"""        <p class="lead">Jot is designed like a printed page. Paper and ink, one typeface, a visible grid, square corners and one signal colour. Nothing is decoration: every rule, shape and colour carries information or holds the grid.</p>
+
+        <h2>1 · Principles</h2>
+        <ol class="rules">
+          <li><b>Words first.</b> The note is the largest thing on the screen. Tools stay small, grey and out of the way.</li>
+          <li><b>One face.</b> JetBrains Mono everywhere, so every character lines up like a typewriter page. Hierarchy comes from size, weight and capitals, never from a second font.</li>
+          <li><b>Square.</b> No rounded corners. The only curves are true circles and the phones in pictures.</li>
+          <li><b>The grid shows.</b> Twelve columns, drawn as hairlines in the gutters. Text sits flush left on a column edge.</li>
+          <li><b>One signal.</b> Ochre marks what matters now: the open tab, the open note, a pin, the caret. Never body text on paper.</li>
+          <li><b>Plain words.</b> Short sentences, sentence case, no exclamation marks, no jargon.</li>
+        </ol>
+
+        <h2>2 · Colour</h2>
+        <p>Eight tokens per theme, in <code>css/paper.css</code>. The app and the site read the same file.</p>
+        <p class="sw-h">Paper (light)</p>
+        <ul class="sws" role="list">{SW_LIGHT}</ul>
+        <p class="sw-h">Carbon (dark)</p>
+        <ul class="sws dark" role="list">{SW_DARK}</ul>
+        <p>Ochre was chosen to stand apart from the maker's other tools (Swoop is orange, Pinch blue, Flick lime, Scrawl yellow) and from Claude's clay. On paper it is too light for small text (3.1:1), so text uses the darker <code>#8a5f00</code>. Ink on an ochre fill reads at 4.6:1.</p>
+
+        <h2>3 · Type</h2>
+        <p>JetBrains Mono, one variable file, weights 400 to 800. Contextual alternates off, slashed zero on.</p>
+        <div class="specimen">
+          <p class="sp-1">Plain notes.</p>
+          <p class="sp-2">Everything you need. Nothing you do not.</p>
+          <p class="sp-3">Saves as you type</p>
+          <p class="sp-4">Every note shows the day and time it was made and last changed.</p>
+          <p class="sp-5">Created · Updated · 01 Features</p>
+        </div>
+        <table>
+          <thead><tr><th scope="col">Role</th><th scope="col">Size</th><th scope="col">Weight</th><th scope="col">Tracking</th></tr></thead>
+          <tbody>
+            <tr><td>Display</td><td>44–108 px</td><td>800</td><td>−6.5%</td></tr>
+            <tr><td>Section heading</td><td>28–52 px</td><td>800</td><td>−5%</td></tr>
+            <tr><td>Card heading</td><td>17–20 px</td><td>800</td><td>−3%</td></tr>
+            <tr><td>Body, note text</td><td>15–18.5 px</td><td>400</td><td>0, leading 1.65–1.75</td></tr>
+            <tr><td>Label</td><td>10.5–12.5 px</td><td>700, capitals</td><td>+12–14%</td></tr>
+          </tbody>
+        </table>
+
+        <h2>4 · Grid</h2>
+        <p>Twelve columns on wide screens and four on phones, with gutters of 14–28 px and a 1320 px maximum. The hairlines sit in the middle of each gutter, so a column's text starts on its edge. Section heads use one pattern everywhere: the number in column 1, the label in columns 2–4, the heading from column 5 (shown in ink below).</p>
+        <div class="grid-demo" aria-hidden="true">{GRID_DEMO}</div>
+
+        <h2>5 · Geometry</h2>
+        <p>Every shape is built from the grid's square module: whole circles, squares, quarter and half circles, and two print textures, a halftone dot screen and a 45° hatch. They are filled with ink, the signal or a texture, never a gradient.</p>
+        <svg class="geo-set" viewBox="0 0 600 100" aria-hidden="true">
+          <defs>
+            <pattern id="ds" width="10" height="10" patternUnits="userSpaceOnUse"><circle class="p-ink" cx="5" cy="5" r="2.2"/></pattern>
+            <pattern id="hs" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect class="p-ink" width="2.6" height="8"/></pattern>
+          </defs>
+          <circle class="g-sun" cx="50" cy="50" r="46"/>
+          <rect class="g-ink" x="120" y="4" width="92" height="92"/>
+          <path class="g-quarter" d="M236 96V4A92 92 0 0 1 328 96Z"/>
+          <circle class="g-ring" cx="398" cy="50" r="45"/>
+          <rect x="464" y="4" width="56" height="92" fill="url(#ds)"/>
+          <rect x="534" y="4" width="62" height="92" fill="url(#hs)"/>
+        </svg>
+
+        <h2>6 · Components</h2>
+        <div class="kit">
+          <a class="btn ink" href="../app/"><span>Open Jot</span><svg aria-hidden="true"><use href="#i-arrow"/></svg></a>
+          <a class="btn line" href="#main"><span>Line button</span></a>
+          <p class="tag on">Ready</p>
+          <p class="tag">Coming</p>
+          <button class="sq-btn" type="button" aria-label="Square icon button"><svg aria-hidden="true"><use href="#i-theme"/></svg></button>
+        </div>
+        <p>Buttons are ink blocks or ink outlines, 40 or 54 px tall, square. Hover turns an ink button ochre. In the app, the list row for the open note gets a 3 px ochre bar; a pinned note, a small ochre square; the open tab, an ochre underline.</p>
+
+        <h2>7 · Icon</h2>
+        <div class="icons">
+          <figure><img src="../icon.svg" width="96" height="96" alt="The Jot icon: a paper j and an ochre cursor on an ink tile"><figcaption class="fig">icon.svg</figcaption></figure>
+          <figure><img src="../app/icons/maskable-512.png" width="96" height="96" alt="The maskable Android icon, with the glyph inside the safe circle"><figcaption class="fig">Android, maskable</figcaption></figure>
+        </div>
+        <p>A lowercase j drawn from squares and one curve, followed by an ochre cursor, as if the word is still being typed. The maskable version shrinks the glyph to 70% so Android's circular crop never cuts the cursor.</p>
+
+        <h2>8 · Research</h2>
+        <ul>
+          <li>Josef Müller-Brockmann, <i>Grid Systems in Graphic Design</i>: the modular grid, flush-left text, information over decoration.</li>
+          <li>iA Writer: typography as the interface, a monospaced face, nothing around the words.</li>
+          <li>Simplenote and Simple Notes: a list and an editor, pins, search and nothing else.</li>
+        </ul>""", wide=True)
+
+page('changelog', 'P6', 'Changelog: every version of Jot',
+     'What changed in each version of Jot, newest first.',
+     'Changelog', """        <article class="ver">
+          <h2>1.1.0 <span class="tag">Next</span></h2>
+          <ul>
+            <li>A locked tab: notes protected by a password and encrypted on the device.</li>
+            <li>Desktop and Android apps built with Tauri, on GitHub releases.</li>
+          </ul>
+        </article>
+        <article class="ver">
+          <h2>1.0.1 <span class="updated">24 October 2026</span></h2>
+          <ul>
+            <li>Square corners everywhere in the app.</li>
+            <li>The icon's cursor is ochre, and the Android icon keeps it inside the safe circle.</li>
+            <li>A new version now says so with a Reload button, instead of waiting quietly.</li>
+            <li>A Get Jot section for the web, Android, iPhone and iPad, Windows, macOS and Linux.</li>
+            <li>New pages: Design, Changelog and a 404 page.</li>
+          </ul>
+        </article>
+        <article class="ver">
+          <h2>1.0.0 <span class="updated">24 October 2026</span></h2>
+          <ul>
+            <li>Plain notes with no sign-in, kept in the browser on your device.</li>
+            <li>Created and updated dates on every note, pins, search, checklists, archive and trash with undo.</li>
+            <li>Paper and carbon themes, JetBrains Mono, an ochre signal.</li>
+            <li>Export to JSON; import from Simple Notes, Fossify Notes and text files.</li>
+          </ul>
+        </article>""")
+
+page('404', '404', 'Not found: Jot', 'This page does not exist.', 'Nothing here',
+     """        <p class="lead">This page does not exist, or it moved. Your notes are fine: they live in the app, not on this site.</p>
+        <p><a class="btn ink" href="/jot/app/"><span>Open Jot</span><svg aria-hidden="true"><use href="#i-arrow"/></svg></a></p>
+        <p><a href="/jot/">Go to the Jot home page</a></p>""", base='/jot/', out='404.html')
+
+PAGES = [('', 'Jot'), ('app/', 'The Jot app'), ('design/', 'Design'), ('changelog/', 'Changelog'), ('privacy/', 'Privacy'),
+         ('terms/', 'Terms'), ('cookies/', 'Cookies'), ('credits/', 'Credits'), ('sitemap/', 'Sitemap')]
 items = '\n'.join(f'          <li><a href="../{p}">{name}</a></li>' for p, name in PAGES)
 page('sitemap', 'P5', 'Sitemap: every page on the Jot website',
-     'All the pages of the Jot website in one list: the landing page, the app, privacy, terms, cookies and credits.',
+     'All the pages of the Jot website in one list: the landing page, the app, design, changelog, privacy, terms, cookies and credits.',
      'Sitemap', f'''        <p>Every page on this site. The same list is in <a href="../sitemap.xml">sitemap.xml</a>.</p>
         <ul>
 {items}

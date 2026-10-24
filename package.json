@@ -1,6 +1,6 @@
 {
   "name": "jot",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "private": true,
   "description": "Plain notes that stay on your device. Static files, no server.",
   "type": "module",

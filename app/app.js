@@ -4,7 +4,7 @@
 
 import * as DB from './db.js'
 
-const VERSION = '1.0.0'
+const VERSION = '1.0.1'
 const TRASH_DAYS = 30
 
 const $ = (s, r = document) => r.querySelector(s)
@@ -472,16 +472,17 @@ async function emptyTrash() {
 /* ---------- toast ---------- */
 
 let toastTimer = 0
-function toast(text, undo = null) {
+function toast(text, undo = null, label = 'Undo', ms = 5000) {
   const t = $('#toast')
   $('#toastText').textContent = text
   const btn = $('#toastBtn')
   btn.hidden = !undo
+  btn.textContent = label
   btn.onclick = undo ? () => { hideToast(); undo() } : null
   t.hidden = false
   requestAnimationFrame(() => t.classList.add('show'))
   clearTimeout(toastTimer)
-  toastTimer = setTimeout(hideToast, undo ? 5000 : 2200)
+  toastTimer = setTimeout(hideToast, undo ? ms : 2200)
 }
 function hideToast() {
   const t = $('#toast')
@@ -677,18 +678,20 @@ $('#installBtn').addEventListener('click', async () => {
 })
 addEventListener('appinstalled', () => { $('#installRow').hidden = true })
 
+// A new version waits until you choose to reload, so nothing changes under your typing
 function watchUpdate(reg) {
-  const ready = () => { $('#updateRow').hidden = false }
+  const apply = async () => {
+    commitEdit(); await flushAll()
+    navigator.serviceWorker.addEventListener('controllerchange', () => location.reload(), { once: true })
+    reg.waiting?.postMessage('skip')
+  }
+  const ready = () => { $('#updateRow').hidden = false; toast('A new version of Jot is ready', apply, 'Reload', 12000) }
   if (reg.waiting && navigator.serviceWorker.controller) ready()
   reg.addEventListener('updatefound', () => {
     const w = reg.installing
     w?.addEventListener('statechange', () => { if (w.state === 'installed' && navigator.serviceWorker.controller) ready() })
   })
-  $('#updateBtn').addEventListener('click', async () => {
-    commitEdit(); await flushAll()
-    navigator.serviceWorker.addEventListener('controllerchange', () => location.reload(), { once: true })
-    reg.waiting?.postMessage('skip')
-  })
+  $('#updateBtn').addEventListener('click', apply)
 }
 
 boot()

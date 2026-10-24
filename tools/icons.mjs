@@ -9,15 +9,18 @@ const pw = createRequire(import.meta.url)('playwright-core')
 const svg = fs.readFileSync(path.join(root, 'icon.svg'), 'utf8')
 const browser = await pw.chromium.launch({ channel: 'chrome', headless: true })
 const page = await browser.newPage()
-async function png(size, file, { pad = 0, bg = 'transparent', square = false } = {}) {
+// A maskable icon is cropped to a circle (the safe zone is the middle 80%), so its glyph shrinks
+const safe = s => s.replace(/(<rect width="64" height="64"[^>]*\/>)([\s\S]*)(<\/svg>)/, '$1<g transform="translate(32 33) scale(.7) translate(-32 -33)">$2</g>$3')
+async function png(size, file, { pad = 0, bg = 'transparent', square = false, mask = false } = {}) {
   await page.setViewportSize({ width: size, height: size })
-  const art = square ? svg.replace('rx="14"', 'rx="0"') : svg
+  let art = square ? svg.replace('rx="14"', 'rx="0"') : svg
+  if (mask) art = safe(art)
   await page.setContent(`<style>html,body{margin:0;background:${bg}}div{width:${size}px;height:${size}px;display:grid;place-items:center}svg{width:${size - 2 * pad}px;height:${size - 2 * pad}px}</style><div>${art}</div>`)
   await page.screenshot({ path: path.join(root, file), omitBackground: bg === 'transparent' })
 }
 await png(192, 'app/icons/icon-192.png')
 await png(512, 'app/icons/icon-512.png')
-await png(512, 'app/icons/maskable-512.png', { square: true })
+await png(512, 'app/icons/maskable-512.png', { square: true, mask: true })
 await png(180, 'apple-touch-icon.png', { square: true })
 // Social card, 1200 x 630
 await page.setViewportSize({ width: 1200, height: 630 })
